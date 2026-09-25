@@ -1,0 +1,9 @@
+USER PANEL MIGRATION NOTES
+
+- Firebase initialization and Firebase database/auth/storage calls were removed from lib.
+- UI widgets/layouts were kept; data/auth logic now uses lib/core/api.
+- API base URL: http://localhost:3000/api/v1
+- Android emulator: adb reverse tcp:3000 tcp:3000
+- Google Sign-In package is still used only to obtain the Google ID token. Firebase Auth is no longer used.
+- Existing pubspec can keep Firebase packages temporarily, but they are no longer imported by lib and can be removed after integration.
+- Keep these existing packages used by the lib: google_sign_in, shared_preferences, flutter_riverpod, go_router, image_picker, intl, cached_network_image, geolocator, geocoding, url_launcher, razorpay_flutter.

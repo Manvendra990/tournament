@@ -1,0 +1,2 @@
+const fs=require('fs'),path=require('path'),{spawnSync}=require('child_process');
+const files=[];function walk(d){for(const x of fs.readdirSync(d)){const p=path.join(d,x);const s=fs.statSync(p);if(s.isDirectory())walk(p);else if(p.endsWith('.js'))files.push(p)}}walk(path.join(process.cwd(),'src'));for(const f of files){const r=spawnSync(process.execPath,['--check',f],{encoding:'utf8'});if(r.status!==0){console.error(r.stderr);process.exit(r.status)}}console.log(`Syntax OK: ${files.length} JS files`);
