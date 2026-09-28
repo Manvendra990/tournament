@@ -21,7 +21,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
 
   DateTime _selectedDate = DateTime.now();
   SlotModel? _selectedSlot;
-  bool _isBooking = false;
+  final bool _isBooking = false;
 
   String get _dateKey => DateFormat('yyyy-MM-dd').format(_selectedDate);
 
@@ -365,7 +365,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: 14,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, i) {
               final date = DateTime.now().add(Duration(days: i));
               final isSelected =
@@ -398,7 +398,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: isSelected
-                              ? Colors.white.withOpacity(0.85)
+                              ? Colors.white.withValues(alpha: 0.85)
                               : AppTheme.textSecondary,
                         ),
                       ),
@@ -463,6 +463,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
       children: [
         // Available — empty circle
         _LegendItem(
+          label: 'Available',
           child: Container(
             width: 16,
             height: 16,
@@ -471,11 +472,11 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
               border: Border.all(color: Colors.grey.shade400, width: 1.5),
             ),
           ),
-          label: 'Available',
         ),
         const SizedBox(width: 16),
         // Selected — filled red circle
         _LegendItem(
+          label: 'Selected',
           child: Container(
             width: 16,
             height: 16,
@@ -484,11 +485,11 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
               color: AppTheme.primaryRed,
             ),
           ),
-          label: 'Selected',
         ),
         const SizedBox(width: 16),
         // Booked — filled grey circle
         _LegendItem(
+          label: 'Booked',
           child: Container(
             width: 16,
             height: 16,
@@ -497,7 +498,6 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
               color: Colors.grey.shade300,
             ),
           ),
-          label: 'Booked',
         ),
       ],
     );
@@ -648,7 +648,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
             width: double.infinity,
             height: 160,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _bannerPlaceholder(),
+            errorBuilder: (_, _, _) => _bannerPlaceholder(),
           ),
 
           // Dark gradient overlay
@@ -658,7 +658,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                 ),
               ),
             ),
@@ -704,7 +704,7 @@ class _SlotBookingScreenState extends State<SlotBookingScreen> {
         color: AppTheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 12,
             offset: const Offset(0, -3),
           ),

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:slotbookingadmin/features/auth/screens/login_screen.dart';
 import 'package:slotbookingadmin/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slotbookingadmin/core/api/session_manager.dart';
@@ -108,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen>
           Center(
             child: AnimatedBuilder(
               animation: _logoOpacity,
-              builder: (_, __) => Opacity(
+              builder: (_, _) => Opacity(
                 opacity: _logoOpacity.value * 0.15,
                 child: Container(
                   width: 320,
@@ -132,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // KINETIC logo
                 AnimatedBuilder(
                   animation: _logoController,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _logoOpacity.value,
                     child: Transform.scale(
                       scale: _logoScale.value,
@@ -160,14 +159,14 @@ class _SplashScreenState extends State<SplashScreen>
                 // Tagline
                 AnimatedBuilder(
                   animation: _taglineOpacity,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _taglineOpacity.value,
                     child: Text(
                       'UNLEASH THE GAME',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w300,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         letterSpacing: 8,
                       ),
                     ),
@@ -181,12 +180,12 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 160,
                   child: AnimatedBuilder(
                     animation: Listenable.merge([_progressWidth, _glowOpacity]),
-                    builder: (_, __) => Stack(
+                    builder: (_, _) => Stack(
                       children: [
                         Container(
                           height: 2,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
+                            color: Colors.white.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -227,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // Powered by
                 AnimatedBuilder(
                   animation: _taglineOpacity,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _taglineOpacity.value,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -236,7 +235,7 @@ class _SplashScreenState extends State<SplashScreen>
                           'Powered by KINETIC Tech',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                             letterSpacing: 0.5,
                           ),
                         ),

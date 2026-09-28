@@ -405,8 +405,8 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(
-                                          0.2,
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.2,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
@@ -677,7 +677,7 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   disabledBackgroundColor: AppColors.primary
-                                      .withOpacity(0.5),
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                             ),
@@ -829,7 +829,7 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.primary.withOpacity(0.2) : Colors.red[50],
+        color: isValid ? AppColors.primary.withValues(alpha: 0.2) : Colors.red[50],
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -973,7 +973,7 @@ class _Card extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

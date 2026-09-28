@@ -19,6 +19,7 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen>
   String? _selectedGroundId;
   String? _selectedGroundName;
   late TabController _tabController;
+  late final Stream<ApiQuerySnapshot> _allTxStream;
 
   static const _primary = AppColors.primary;
   static const _gold = Color(0xFFFFB300);
@@ -26,7 +27,15 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen>
   @override
   void initState() {
     super.initState();
+
     _tabController = TabController(length: 2, vsync: this);
+
+    // FIX:
+    // Revenue stream can now safely be listened to by:
+    // 1. By Ground tab
+    // 2. Filter bottom sheet
+    // without "Stream has already been listened to"
+    _allTxStream = AdminApiCompat.revenue().asBroadcastStream();
   }
 
   @override
@@ -35,8 +44,8 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen>
     super.dispose();
   }
 
-  Stream<ApiQuerySnapshot> get _txStream => AdminApiCompat.revenue(date: _selectedDate, groundId: _selectedGroundId);
-  Stream<ApiQuerySnapshot> get _allTxStream => AdminApiCompat.revenue();
+  Stream<ApiQuerySnapshot> get _txStream =>
+      AdminApiCompat.revenue(date: _selectedDate, groundId: _selectedGroundId);
 
   void _clearFilters() => setState(() {
     _selectedDate = null;
@@ -175,7 +184,7 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen>
                                 32,
                               ),
                               itemCount: allData.length,
-                              separatorBuilder: (_, __) =>
+                              separatorBuilder: (_, _) =>
                                   const SizedBox(height: 10),
                               itemBuilder: (ctx, i) => _TxCard(
                                 data: allData[i],
@@ -195,8 +204,36 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen>
                       StreamBuilder<ApiQuerySnapshot>(
                         stream: _allTxStream,
                         builder: (context, allSnap) {
+                          if (allSnap.hasError) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Text(
+                                  'Unable to load ground revenue.\n${allSnap.error}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (allSnap.connectionState ==
+                                  ConnectionState.waiting &&
+                              !allSnap.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                              ),
+                            );
+                          }
+
                           final allDocs = allSnap.data?.docs ?? [];
                           final allTx = allDocs.map((d) => d.data()).toList();
+
+                          // existing code continues...
 
                           // Build ground stats
                           final Map<String, _GroundStat> gMap = {};
@@ -234,7 +271,7 @@ class _AdminRevenueScreenState extends State<AdminRevenueScreen>
                           return ListView.separated(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                             itemCount: grounds.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const SizedBox(height: 10),
                             itemBuilder: (ctx, i) => _GroundCard(
                               stat: grounds[i],
@@ -356,7 +393,7 @@ class _RevenueHeader extends StatelessWidget {
               height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -368,7 +405,7 @@ class _RevenueHeader extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -391,10 +428,10 @@ class _RevenueHeader extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -424,12 +461,14 @@ class _RevenueHeader extends StatelessWidget {
                     ),
                   ),
 
-                Text(
-                  isFiltered ? 'Filtered Revenue' : 'Total Revenue',
-                  style: TextStyle(
-                    color: AppColors.card.withOpacity(0.75),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                Center(
+                  child: Text(
+                    'Total Revenue',
+                    style: TextStyle(
+                      color: AppColors.card.withValues(alpha: 0.75),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -440,7 +479,7 @@ class _RevenueHeader extends StatelessWidget {
                         width: 120,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.card.withOpacity(0.15),
+                          color: AppColors.card.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                       )
@@ -450,7 +489,7 @@ class _RevenueHeader extends StatelessWidget {
                           Text(
                             '₹',
                             style: TextStyle(
-                              color: AppColors.card.withOpacity(0.8),
+                              color: AppColors.card.withValues(alpha: 0.8),
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                             ),
@@ -497,9 +536,9 @@ class _RevenueHeader extends StatelessWidget {
     final result = StringBuffer();
     final reversed = s.split('').reversed.toList();
     for (int i = 0; i < reversed.length; i++) {
-      if (i == 3 && i < reversed.length)
+      if (i == 3 && i < reversed.length) {
         result.write(',');
-      else if (i > 3 && (i - 3) % 2 == 0 && i < reversed.length) {
+      } else if (i > 3 && (i - 3) % 2 == 0 && i < reversed.length) {
         result.write(',');
       }
       result.write(reversed[i]);
@@ -518,9 +557,9 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.25)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -574,7 +613,7 @@ class _TxCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.04),
+            color: Colors.black.withValues(alpha: .04),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -587,7 +626,7 @@ class _TxCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(.08),
+              color: AppColors.primary.withValues(alpha: .08),
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
@@ -596,7 +635,7 @@ class _TxCard extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(.12),
+                    color: AppColors.primary.withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: const Icon(
@@ -649,7 +688,7 @@ class _TxCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isSuccess
-                            ? AppColors.primary.withOpacity(0.1)
+                            ? AppColors.primary.withValues(alpha: 0.1)
                             : Colors.red.shade50,
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -810,12 +849,7 @@ class _GroundStat {
   final String name;
   int total;
   int count;
-  _GroundStat({
-    required this.id,
-    required this.name,
-    this.total = 0,
-    this.count = 0,
-  });
+  _GroundStat({required this.id, required this.name}) : total = 0, count = 0;
 }
 
 class _GroundCard extends StatelessWidget {
@@ -850,13 +884,13 @@ class _GroundCard extends StatelessWidget {
               ? Border.all(color: AppColors.primary, width: 2)
               : isTop
               ? Border.all(
-                  color: AppColors.primary.withOpacity(0.5),
+                  color: AppColors.primary.withValues(alpha: 0.5),
                   width: 1.5,
                 )
               : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(.04),
+              color: Colors.black.withValues(alpha: .04),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -873,8 +907,8 @@ class _GroundCard extends StatelessWidget {
                   height: 34,
                   decoration: BoxDecoration(
                     color: isTop
-                        ? AppColors.primary.withOpacity(0.15)
-                        : AppColors.primary.withOpacity(.08),
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : AppColors.primary.withValues(alpha: .08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
@@ -919,7 +953,9 @@ class _GroundCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.15),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.15,
+                                ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text(
@@ -939,7 +975,7 @@ class _GroundCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(.12),
+                                color: AppColors.primary.withValues(alpha: .12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text(
@@ -1290,7 +1326,7 @@ class _EmptyState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(.10),
+                color: AppColors.primary.withValues(alpha: .10),
                 borderRadius: BorderRadius.circular(22),
               ),
               child: const Icon(

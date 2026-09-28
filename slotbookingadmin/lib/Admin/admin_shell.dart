@@ -34,7 +34,7 @@ class _AdminShellState extends State<AdminShell> {
 class AdminShellScope extends InheritedWidget {
   final VoidCallback openDrawer;
 
-  const AdminShellScope({required this.openDrawer, required super.child});
+  const AdminShellScope({super.key, required this.openDrawer, required super.child});
 
   static AdminShellScope? of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<AdminShellScope>();
@@ -165,7 +165,7 @@ class _DrawerItem extends StatelessWidget {
       selected: selected,
       selectedTileColor: Theme.of(
         context,
-      ).colorScheme.primary.withOpacity(0.08),
+      ).colorScheme.primary.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onTap: () {
         Navigator.pop(context);

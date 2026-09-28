@@ -171,7 +171,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen>
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.07),
+                            color: Colors.black.withValues(alpha: 0.07),
                             blurRadius: 24,
                             offset: const Offset(0, 6),
                           ),
@@ -191,8 +191,9 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen>
                               prefixIcon: Icons.mail_outline_rounded,
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Email required';
+                                }
                                 if (!v.contains('@')) return 'Invalid email';
                                 return null;
                               },
@@ -237,8 +238,9 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen>
                                 ),
                               ),
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Password required';
+                                }
                                 if (v.length < 6) return 'Min 6 characters';
                                 return null;
                               },
@@ -288,7 +290,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen>
                                     borderRadius: BorderRadius.circular(50),
                                   ),
                                   disabledBackgroundColor: AppColors.primary
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                                 ),
                                 child: authState.isLoading
                                     ? const SizedBox(
@@ -346,7 +348,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen>
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.primary,
                                   side: BorderSide(
-                                    color: AppColors.primary.withOpacity(0.5),
+                                    color: AppColors.primary.withValues(alpha: 0.5),
                                     width: 1.5,
                                   ),
                                   shape: RoundedRectangleBorder(

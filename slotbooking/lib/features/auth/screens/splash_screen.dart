@@ -125,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
           Center(
             child: AnimatedBuilder(
               animation: _logoOpacity,
-              builder: (_, __) => Opacity(
+              builder: (_, _) => Opacity(
                 opacity: _logoOpacity.value * 0.25,
                 child: Container(
                   width: 340,
@@ -149,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // Logo icon
                 AnimatedBuilder(
                   animation: _logoController,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _logoOpacity.value,
                     child: Transform.scale(
                       scale: _logoScale.value,
@@ -161,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFD0021B).withOpacity(0.6),
+                              color: const Color(0xFFD0021B).withValues(alpha: 0.6),
                               blurRadius: 32,
                               spreadRadius: 4,
                             ),
@@ -182,7 +182,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // Brand name — GO ARENA
                 AnimatedBuilder(
                   animation: _logoController,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _logoOpacity.value,
                     child: Transform.scale(
                       scale: _logoScale.value,
@@ -222,14 +222,14 @@ class _SplashScreenState extends State<SplashScreen>
                 // Tagline
                 AnimatedBuilder(
                   animation: _taglineOpacity,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _taglineOpacity.value,
                     child: Text(
                       'UNLEASH THE GAME',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        color: Colors.white.withOpacity(0.55),
+                        color: Colors.white.withValues(alpha: 0.55),
                         letterSpacing: 7,
                       ),
                     ),
@@ -243,13 +243,13 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 160,
                   child: AnimatedBuilder(
                     animation: Listenable.merge([_progressWidth, _glowOpacity]),
-                    builder: (_, __) => Stack(
+                    builder: (_, _) => Stack(
                       children: [
                         // Track
                         Container(
                           height: 2,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -288,7 +288,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // Powered by
                 AnimatedBuilder(
                   animation: _taglineOpacity,
-                  builder: (_, __) => Opacity(
+                  builder: (_, _) => Opacity(
                     opacity: _taglineOpacity.value,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -297,7 +297,7 @@ class _SplashScreenState extends State<SplashScreen>
                           'Powered by GO ARENA Tech',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.white.withOpacity(0.35),
+                            color: Colors.white.withValues(alpha: 0.35),
                             letterSpacing: 0.5,
                           ),
                         ),

@@ -94,7 +94,7 @@ class _UserLoginScreenState extends State<UserLoginScreen>
           Image.asset(
             'assets/images/goarena.png',
             fit: BoxFit.cover,
-            color: Colors.black.withOpacity(0.55),
+            color: Colors.black.withValues(alpha: 0.55),
             colorBlendMode: BlendMode.darken,
           ),
           Container(
@@ -140,7 +140,7 @@ class _UserLoginScreenState extends State<UserLoginScreen>
                           'Login with your username or mobile number\nand password.',
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.white.withOpacity(0.65),
+                            color: Colors.white.withValues(alpha: 0.65),
                             height: 1.5,
                           ),
                           textAlign: TextAlign.center,
@@ -196,7 +196,7 @@ class _UserLoginScreenState extends State<UserLoginScreen>
                               backgroundColor: AppTheme.primaryRed,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor:
-                                  AppTheme.primaryRed.withOpacity(0.55),
+                                  AppTheme.primaryRed.withValues(alpha: 0.55),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
                               ),
@@ -227,7 +227,7 @@ class _UserLoginScreenState extends State<UserLoginScreen>
                             Text(
                               "Don't have an account? ",
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.65),
+                                color: Colors.white.withValues(alpha: 0.65),
                               ),
                             ),
                             TextButton(
@@ -269,7 +269,7 @@ class _UserLoginScreenState extends State<UserLoginScreen>
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryRed.withOpacity(0.5),
+                color: AppTheme.primaryRed.withValues(alpha: 0.5),
                 blurRadius: 24,
                 spreadRadius: 2,
               ),
@@ -294,7 +294,7 @@ class _UserLoginScreenState extends State<UserLoginScreen>
   Widget _securityFooter() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
+        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.2))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
@@ -303,11 +303,11 @@ class _UserLoginScreenState extends State<UserLoginScreen>
               fontSize: 10,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.8,
-              color: Colors.white.withOpacity(0.35),
+              color: Colors.white.withValues(alpha: 0.35),
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
+        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.2))),
       ],
     );
   }
@@ -362,19 +362,19 @@ class _AuthField extends StatelessWidget {
           cursorColor: AppTheme.primaryRed,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.38)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.38)),
             prefixIcon: Icon(icon, color: Colors.white60),
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: Colors.white.withOpacity(0.09),
+            fillColor: Colors.white.withValues(alpha: 0.09),
             errorStyle: const TextStyle(color: Color(0xFFFF8A96)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.12)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.13)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.13)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),

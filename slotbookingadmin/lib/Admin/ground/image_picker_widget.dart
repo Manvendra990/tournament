@@ -137,7 +137,7 @@ class _GroundImagePickerState extends State<GroundImagePicker> {
                       color: _greenLight,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _green.withOpacity(0.3),
+                        color: _green.withValues(alpha: 0.3),
                         style: BorderStyle.solid,
                       ),
                     ),
@@ -206,7 +206,7 @@ class _GroundImagePickerState extends State<GroundImagePicker> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.55),
+                  color: Colors.black.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -229,7 +229,7 @@ class _GroundImagePickerState extends State<GroundImagePicker> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.close, size: 16, color: Colors.white),
@@ -253,7 +253,7 @@ class _GroundImagePickerState extends State<GroundImagePicker> {
             color: _greenLight,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _green.withOpacity(0.2),
+              color: _green.withValues(alpha: 0.2),
               style: BorderStyle.solid,
             ),
           ),
@@ -263,14 +263,14 @@ class _GroundImagePickerState extends State<GroundImagePicker> {
               Icon(
                 Icons.add_photo_alternate_outlined,
                 size: 44,
-                color: _green.withOpacity(0.7),
+                color: _green.withValues(alpha: 0.7),
               ),
               const SizedBox(height: 8),
               Text(
                 'Tap to add ground photos',
                 style: TextStyle(
                   fontSize: 13,
-                  color: _green.withOpacity(0.8),
+                  color: _green.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
                 ),
               ),

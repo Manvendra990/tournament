@@ -9,7 +9,6 @@ import 'package:slotbooking/User/payments/booking_payment_screen.dart';
 import 'package:slotbooking/User/profile/user_profile.dart';
 import 'package:slotbooking/User/slot_selections/slot.dart';
 import 'package:slotbooking/features/auth/screens/otp_screen.dart';
-import 'package:slotbooking/features/auth/screens/splash_screen.dart';
 import 'package:slotbooking/features/auth/screens/userlogin_screen.dart';
 import 'package:slotbooking/features/auth/screens/userregister_screen.dart';
 
@@ -19,24 +18,32 @@ final GoRouter router = GoRouter(
   redirect: (context, state) {
     final loggedIn = SessionManager.isLoggedIn;
 
+    final path = state.uri.path;
+
     final publicRoutes = [
-      '/',
-      '/role-selection',
-      '/admin/login',
       '/user/login',
-      '/user/otp',
-      '/admin/register',
       '/user/register',
+      '/user/otp',
+      '/admin/login',
+      '/admin/register',
       '/master/register',
+      '/role-selection',
     ];
 
-    final isPublic = publicRoutes.contains(state.uri.path);
+    // App root "/" par aaye
+    if (path == '/') {
+      return loggedIn ? '/user/home' : '/user/login';
+    }
 
+    final isPublic = publicRoutes.contains(path);
+
+    // Not logged in → protected screen access block
     if (!loggedIn && !isPublic) {
       return '/user/login';
     }
 
-    if (loggedIn && state.uri.path == '/user/login') {
+    // Already logged in → login/register dobara na dikhao
+    if (loggedIn && (path == '/user/login' || path == '/user/register')) {
       return '/user/home';
     }
 
@@ -46,31 +53,29 @@ final GoRouter router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
 
-    // ── User username/phone + password auth ─────────────────────────────────
-    GoRoute(path: '/user/login', builder: (_, __) => const UserLoginScreen()),
+    GoRoute(path: '/user/login', builder: (_, _) => const UserLoginScreen()),
+
     GoRoute(
       path: '/user/register',
-      builder: (_, __) => const UserRegisterScreen(),
+      builder: (_, _) => const UserRegisterScreen(),
     ),
 
-    // ── OTP screen — /otp?phone=+91xxxxxxxxxx ────────────────────────────────
     GoRoute(
       path: '/user/otp',
       builder: (_, state) {
         final phone = Uri.decodeComponent(
           state.uri.queryParameters['phone'] ?? '',
         );
+
         return OtpScreen(phoneNumber: phone);
       },
     ),
 
-    //// user  screens
     GoRoute(
       path: '/user/home',
-      builder: (context, state) {
-        return HomeScreen();
-      },
+      builder: (context, state) => const HomeScreen(),
     ),
+
     GoRoute(
       path: '/user/ground_details',
       builder: (context, state) {
@@ -78,6 +83,7 @@ final GoRouter router = GoRouter(
         return GroundDetailScreen(groundId: groundId);
       },
     ),
+
     GoRoute(
       path: '/user/slot',
       builder: (context, state) {
@@ -85,30 +91,29 @@ final GoRouter router = GoRouter(
         return SlotBookingScreen(groundId: groundId);
       },
     ),
+
     GoRoute(
       path: '/user/payment',
       builder: (context, state) {
         final bookingData = state.extra as Map<String, dynamic>? ?? {};
+
         return BookingPaymentScreen(bookingData: bookingData);
       },
     ),
+
     GoRoute(
       path: '/user/transaction',
-      builder: (context, state) {
-        return TransactionHistoryScreen();
-      },
+      builder: (context, state) => TransactionHistoryScreen(),
     ),
+
     GoRoute(
       path: '/user/booking_history',
-      builder: (context, state) {
-        return BookingHistoryScreen();
-      },
+      builder: (context, state) => BookingHistoryScreen(),
     ),
+
     GoRoute(
       path: '/user/profile',
-      builder: (context, state) {
-        return UserProfileScreen();
-      },
+      builder: (context, state) => UserProfileScreen(),
     ),
   ],
 );

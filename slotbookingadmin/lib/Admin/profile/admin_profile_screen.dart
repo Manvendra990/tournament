@@ -324,7 +324,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         hintText: 'Write something about yourself…',
                         hintStyle: TextStyle(
                           fontFamily: 'Lexend',
-                          color: AppColors.textSecondary.withOpacity(0.5),
+                          color: AppColors.textSecondary.withValues(alpha: 0.5),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -535,10 +535,10 @@ class _HeroBanner extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -818,7 +818,7 @@ class _ActionTile extends StatelessWidget {
                 ),
               ),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
             if (showChevron && trailing == null)
               const Icon(
                 Icons.chevron_right_rounded,
@@ -844,9 +844,9 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.35), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
       ),
       child: Text(
         label,

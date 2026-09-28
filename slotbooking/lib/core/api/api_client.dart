@@ -15,11 +15,13 @@ class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
-  // Keep localhost for the existing Windows + Android emulator workflow.
-  // Run: adb reverse tcp:3000 tcp:3000
-  static const String baseUrl = 'http://localhost:3000/api/v1';
-  // static const String baseUrl =
-  // '  https://jbbdn6q4-3000.inc1.devtunnels.ms/api/v1';
+  // Use a device-safe default for Android emulator, and override it for a
+  // physical phone with your computer's LAN IP, e.g.:
+  // flutter run --dart-define=API_BASE_URL=http://192.168.1.25:3000/api/v1
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:3000/api/v1',
+  );
   //
   Uri _uri(String path, [Map<String, dynamic>? query]) {
     final cleanPath = path.startsWith('/') ? path : '/$path';

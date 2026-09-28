@@ -44,7 +44,6 @@ class _ProfileScreenState extends State<UserProfileScreen>
     super.dispose();
   }
 
-
   Future<void> _pickAndUploadPhoto() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
@@ -67,6 +66,22 @@ class _ProfileScreenState extends State<UserProfileScreen>
       _showSnack('Failed to upload photo: $e');
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _editProfile(Map<String, dynamic> userData) async {
+    final updatedUser = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) =>
+          _EditProfileDialog(profileApi: _profileApi, userData: userData),
+    );
+
+    if (updatedUser != null && mounted) {
+      setState(() {
+        _profileFuture = Future.value(updatedUser);
+      });
+      _showSnack('Profile updated');
     }
   }
 
@@ -111,6 +126,7 @@ class _ProfileScreenState extends State<UserProfileScreen>
           final userData = snapshot.data ?? SessionManager.currentUser ?? {};
           final displayName = userData['name'] as String? ?? 'Player';
           final email = userData['email'] as String? ?? '';
+          final phone = userData['phone']?.toString() ?? '';
           final photoUrl = userData['photoUrl'] as String?;
 
           return CustomScrollView(
@@ -133,10 +149,10 @@ class _ProfileScreenState extends State<UserProfileScreen>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       child: const Icon(
@@ -145,7 +161,7 @@ class _ProfileScreenState extends State<UserProfileScreen>
                         size: 18,
                       ),
                     ),
-                    onPressed: () {}, // edit profile logic yahan
+                    onPressed: () => _editProfile(userData),
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -191,6 +207,12 @@ class _ProfileScreenState extends State<UserProfileScreen>
                             label: 'Full Name',
                             trailing: displayName,
                           ),
+                          if (phone.isNotEmpty)
+                            _MenuItem(
+                              icon: Icons.phone_outlined,
+                              label: 'Phone',
+                              trailing: phone,
+                            ),
                           if (email.isNotEmpty)
                             _MenuItem(
                               icon: Icons.mail_outline_rounded,
@@ -257,6 +279,136 @@ class _ProfileScreenState extends State<UserProfileScreen>
   }
 }
 
+class _EditProfileDialog extends StatefulWidget {
+  final ProfileApi profileApi;
+  final Map<String, dynamic> userData;
+
+  const _EditProfileDialog({required this.profileApi, required this.userData});
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _bioController;
+  bool _isSaving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: widget.userData['name']?.toString() ?? '',
+    );
+    _phoneController = TextEditingController(
+      text: widget.userData['phone']?.toString() ?? '',
+    );
+    _bioController = TextEditingController(
+      text: widget.userData['bio']?.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _bioController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+    try {
+      final user = await widget.profileApi.update(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        bio: _bioController.text.trim(),
+      );
+      if (mounted) Navigator.of(context).pop(user);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+        _error = 'Failed to update profile: $error';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_isSaving,
+      child: AlertDialog(
+        title: const Text('Edit profile'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(labelText: 'Full name'),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter your name'
+                      : null,
+                ),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Phone'),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter your phone number'
+                      : null,
+                ),
+                TextFormField(
+                  controller: _bioController,
+                  maxLines: 3,
+                  maxLength: 160,
+                  decoration: const InputDecoration(labelText: 'Bio'),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: _isSaving ? null : _save,
+            child: _isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Profile Header ───────────────────────────────────────────────────────────
 class _ProfileHeader extends StatelessWidget {
   final String displayName;
@@ -296,7 +448,7 @@ class _ProfileHeader extends StatelessWidget {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -308,7 +460,7 @@ class _ProfileHeader extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -334,12 +486,12 @@ class _ProfileHeader extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.4),
+                                color: Colors.white.withValues(alpha: 0.4),
                                 width: 2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -348,7 +500,9 @@ class _ProfileHeader extends StatelessWidget {
                           ),
                           CircleAvatar(
                             radius: 46,
-                            backgroundColor: Colors.white.withOpacity(0.2),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.2,
+                            ),
                             backgroundImage: photoUrl != null
                                 ? NetworkImage(photoUrl!)
                                 : null,
@@ -381,7 +535,7 @@ class _ProfileHeader extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.15),
+                                    color: Colors.black.withValues(alpha: 0.15),
                                     blurRadius: 6,
                                   ),
                                 ],
@@ -405,10 +559,10 @@ class _ProfileHeader extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
+                      color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -460,7 +614,7 @@ class _ProfileHeader extends StatelessWidget {
 
                         const SizedBox(height: 12),
                         Divider(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           height: 1,
                         ),
                         const SizedBox(height: 12),
@@ -473,7 +627,7 @@ class _ProfileHeader extends StatelessWidget {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: Colors.white.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
@@ -487,7 +641,7 @@ class _ProfileHeader extends StatelessWidget {
                                 child: Text(
                                   email,
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                     fontSize: 13,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -571,7 +725,7 @@ class _StatTile extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -652,7 +806,7 @@ class _MenuCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -727,7 +881,7 @@ class _MenuItemTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: AppTheme.textSecondary.withOpacity(0.5),
+                color: AppTheme.textSecondary.withValues(alpha: 0.5),
               ),
           ],
         ),
@@ -736,9 +890,9 @@ class _MenuItemTile extends StatelessWidget {
   }
 }
 
-// ─── Logout Button ────────────────────────────────────────────────────────────
 class _LogoutButton extends StatelessWidget {
   final VoidCallback onTap;
+
   const _LogoutButton({required this.onTap});
 
   @override
@@ -751,7 +905,7 @@ class _LogoutButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.lightRed,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.primaryRed.withOpacity(0.3)),
+          border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

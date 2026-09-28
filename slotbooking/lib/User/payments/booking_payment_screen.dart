@@ -641,7 +641,7 @@ class _BookingPaymentScreenState extends State<BookingPaymentScreen> {
 
                         disabledBackgroundColor: const Color(
                           0xFFD32F2F,
-                        ).withOpacity(0.6),
+                        ).withValues(alpha: 0.6),
 
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),

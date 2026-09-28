@@ -47,7 +47,7 @@ class AdminNavBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.04),
+            color: Colors.black.withValues(alpha: .04),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -80,7 +80,7 @@ class AdminNavBar extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? AppColors.primary.withOpacity(.12)
+                          ? AppColors.primary.withValues(alpha: .12)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -92,7 +92,7 @@ class AdminNavBar extends StatelessWidget {
                           size: 22,
                           color: isActive
                               ? AppColors.primary
-                              : AppColors.textSecondary.withOpacity(0.5),
+                              : AppColors.textSecondary.withValues(alpha: 0.5),
                         ),
                         SizedBox(height: AppSpacing.xs),
                         Text(
@@ -104,7 +104,7 @@ class AdminNavBar extends StatelessWidget {
                                 : FontWeight.w400,
                             color: isActive
                                 ? AppColors.primary
-                                : AppColors.textSecondary.withOpacity(0.5),
+                                : AppColors.textSecondary.withValues(alpha: 0.5),
                           ),
                         ),
                       ],

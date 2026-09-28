@@ -1,7 +1,6 @@
 import 'package:slotbookingadmin/core/api/api_compat.dart';
 import 'package:slotbookingadmin/core/api/api_services.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:slotbookingadmin/Admin/navbar/adminNavbar.dart';
 import 'package:slotbookingadmin/theme/app_colors.dart';
@@ -206,9 +205,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                               _filterStatus;
                         }).toList();
 
-                  final activeCount = allSlots
-                      .where((slot) => !_isPastSlot(slot))
-                      .length;
+                  final activeCount = filteredSlots.length;
 
                   return RefreshIndicator(
                     color: AppColors.primary,
@@ -294,7 +291,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: status,
+                initialValue: status,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: const [
                   DropdownMenuItem(
@@ -553,7 +550,7 @@ class _SummaryCard extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               Row(
@@ -566,7 +563,7 @@ class _SummaryCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: i == 0
                           ? Colors.white
-                          : Colors.white.withOpacity(0.3),
+                          : Colors.white.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -592,7 +589,7 @@ class _SummaryCard extends StatelessWidget {
                 : 'No active slots. Create new slots to get started.',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               height: 1.5,
             ),
           ),
@@ -694,7 +691,7 @@ class _BookingCard extends StatelessWidget {
         border: Border.all(color: Colors.grey[100]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -726,11 +723,8 @@ class _BookingCard extends StatelessWidget {
                   ? AdminApiCompat.ground(groundId)
                   : Future<ApiDocument?>.value(null),
               builder: (context, snap) {
-                final groundName =
-                    (snap.data?.data() as Map<String, dynamic>?)?['name'] ??
-                    'Ground';
-                final groundCity =
-                    (snap.data?.data() as Map<String, dynamic>?)?['city'] ?? '';
+                final groundName = (snap.data?.data())?['name'] ?? 'Ground';
+                final groundCity = (snap.data?.data())?['city'] ?? '';
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -991,7 +985,7 @@ class _TabChip extends StatelessWidget {
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

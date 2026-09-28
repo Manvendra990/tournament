@@ -284,10 +284,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.error.withOpacity(0.06),
+                          color: AppTheme.error.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: AppTheme.error.withOpacity(0.3),
+                            color: AppTheme.error.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
@@ -372,7 +372,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                           Expanded(
                             child: AppText.bodyMedium(
                               'Your number is secured with end-to-end encryption.',
-                              color: AppTheme.primaryRed.withOpacity(0.8),
+                              color: AppTheme.primaryRed.withValues(alpha: 0.8),
                             ),
                           ),
                         ],

@@ -162,7 +162,7 @@ class BookingApi {
         'slotId': slotId,
         'paymentStatus': paymentStatus,
         'paymentMethod': paymentMethod,
-        if (paymentReference != null) 'paymentReference': paymentReference,
+        'paymentReference': ?paymentReference,
       },
     ),
   );
@@ -170,7 +170,7 @@ class BookingApi {
   Future<void> cancel(String bookingId, {String? reason}) async {
     await _api.patch(
       '/bookings/$bookingId/cancel',
-      body: {if (reason != null) 'reason': reason},
+      body: {'reason': ?reason},
     );
   }
 }
@@ -200,9 +200,9 @@ class ProfileApi {
     File? photo,
   }) async {
     final fields = <String, String>{
-      if (name != null) 'name': name,
-      if (phone != null) 'phone': phone,
-      if (bio != null) 'bio': bio,
+      'name': ?name,
+      'phone': ?phone,
+      'bio': ?bio,
     };
     final data = _map(
       await _api.multipartPatch(

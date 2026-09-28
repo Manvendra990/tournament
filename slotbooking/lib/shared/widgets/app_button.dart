@@ -108,7 +108,7 @@ class AppButton extends StatelessWidget {
     switch (variant) {
       case AppButtonVariant.primary:
         return _isDisabled
-            ? AppTheme.primaryRed.withOpacity(0.45)
+            ? AppTheme.primaryRed.withValues(alpha: 0.45)
             : AppTheme.primaryRed;
       case AppButtonVariant.secondary:
       case AppButtonVariant.ghost:
@@ -122,11 +122,11 @@ class AppButton extends StatelessWidget {
         return Colors.white;
       case AppButtonVariant.secondary:
         return _isDisabled
-            ? AppTheme.primaryRed.withOpacity(0.45)
+            ? AppTheme.primaryRed.withValues(alpha: 0.45)
             : AppTheme.primaryRed;
       case AppButtonVariant.ghost:
         return _isDisabled
-            ? AppTheme.textSecondary.withOpacity(0.45)
+            ? AppTheme.textSecondary.withValues(alpha: 0.45)
             : AppTheme.textSecondary;
     }
   }
@@ -139,7 +139,7 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.secondary:
         return BorderSide(
           color: _isDisabled
-              ? AppTheme.primaryRed.withOpacity(0.45)
+              ? AppTheme.primaryRed.withValues(alpha: 0.45)
               : AppTheme.primaryRed,
           width: 1.5,
         );

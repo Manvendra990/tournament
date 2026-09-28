@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:slotbooking/User/navbar/usernavbar.dart';
 import 'package:slotbooking/data/theam/app_theam.dart';
-import 'package:slotbooking/shared/widgets/apptext.dart';
 import 'package:slotbooking/core/api/api_services.dart';
 import 'package:slotbooking/core/api/session_manager.dart';
 
@@ -17,6 +15,7 @@ class BookingHistoryScreen extends StatefulWidget {
 
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   DateFilter _activeFilter = DateFilter.all;
+  late final Future<List<Map<String, dynamic>>> _bookingsFuture;
 
   String? get _uid => SessionManager.currentUserId;
 
@@ -29,6 +28,12 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   static const _amberTxt = Color(0xFF92400E);
   static const _amberBar = Color(0xFFD97706);
 
+  @override
+  void initState() {
+    super.initState();
+    _bookingsFuture = _loadBookings();
+  }
+
   (DateTime?, DateTime?) get _dateRange {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
@@ -39,26 +44,54 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       case DateFilter.today:
         return (todayStart, todayEnd);
       case DateFilter.thisWeek:
-        return (todayStart.subtract(Duration(days: now.weekday - 1)), todayEnd);
+        final weekStart = todayStart.subtract(
+          Duration(days: now.weekday - DateTime.monday),
+        );
+        return (weekStart, weekStart.add(const Duration(days: 7)));
       case DateFilter.thisMonth:
-        return (DateTime(now.year, now.month, 1), todayEnd);
+        return (
+          DateTime(now.year, now.month, 1),
+          DateTime(
+            now.month == 12 ? now.year + 1 : now.year,
+            (now.month % 12) + 1,
+            1,
+          ),
+        );
       case DateFilter.older:
-        return (DateTime(2000), todayStart);
+        return (null, todayStart);
     }
   }
 
   Future<List<Map<String, dynamic>>> _loadBookings() async {
     if (_uid == null) return const [];
-    final rows = await BookingApi().mine();
+    return BookingApi().mine();
+  }
+
+  List<Map<String, dynamic>> _filterBookings(List<Map<String, dynamic>> rows) {
     final (from, to) = _dateRange;
     if (from == null && to == null) return rows;
     return rows.where((data) {
-      final createdAt = apiDate(data['createdAt']);
-      if (createdAt == null) return false;
-      if (from != null && createdAt.isBefore(from)) return false;
-      if (to != null && !createdAt.isBefore(to)) return false;
+      final bookingDate = _historyDate(data);
+      if (bookingDate == null) return false;
+      if (from != null && bookingDate.isBefore(from)) return false;
+      if (to != null && !bookingDate.isBefore(to)) return false;
       return true;
     }).toList();
+  }
+
+  DateTime? _historyDate(Map<String, dynamic> data) {
+    final createdAt = apiDate(data['createdAt']);
+    if (createdAt != null) {
+      return DateTime(createdAt.year, createdAt.month, createdAt.day);
+    }
+
+    final rawDate = data['date']?.toString();
+    if (rawDate != null && rawDate.length >= 10) {
+      final bookingDate = DateTime.tryParse(rawDate.substring(0, 10));
+      if (bookingDate != null) return bookingDate;
+    }
+
+    return null;
   }
 
   Color _statusBarColor(String s) {
@@ -104,13 +137,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     return DateFormat('MMM d').format(dt);
   }
 
-  Map<String, List<ApiDocument>> _groupByDate(
-    List<ApiDocument> docs,
-  ) {
+  Map<String, List<ApiDocument>> _groupByDate(List<ApiDocument> docs) {
     final groups = <String, List<ApiDocument>>{};
     for (final doc in docs) {
       final data = doc.data();
-      final ts = apiDate(data['createdAt']) ?? DateTime.now();
+      final ts = _historyDate(data) ?? DateTime.now();
       groups
           .putIfAbsent(DateFormat('yyyy-MM-dd').format(ts), () => [])
           .add(doc);
@@ -194,7 +225,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: filters.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
           itemBuilder: (_, i) {
             final isActive = _activeFilter == filters[i];
             return GestureDetector(
@@ -238,26 +269,27 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     }
 
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _loadBookings(),
+      future: _bookingsFuture,
       builder: (context, snap) {
-        if (snap.hasError)
-          return _buildEmpty(
-            'Error loading bookings.',
-            Icons.error_outline,
-          );
-        if (snap.connectionState == ConnectionState.waiting)
+        if (snap.hasError) {
+          return _buildEmpty('Error loading bookings.', Icons.error_outline);
+        }
+        if (snap.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: AppTheme.primaryRed),
           );
+        }
 
-        final docs = (snap.data ?? const <Map<String, dynamic>>[])
-            .map(ApiDocument.new)
-            .toList();
-        if (docs.isEmpty)
+        final filteredRows = _filterBookings(
+          snap.data ?? const <Map<String, dynamic>>[],
+        );
+        final docs = filteredRows.map(ApiDocument.new).toList();
+        if (docs.isEmpty) {
           return _buildEmpty(
             'No bookings found',
             Icons.calendar_today_outlined,
           );
+        }
 
         final groups = _groupByDate(docs);
         final dates = groups.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -266,7 +298,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         int totalBookings = docs.length;
         int totalSpent = 0;
         for (final doc in docs) {
-          final data = doc.data() as Map<String, dynamic>;
+          final data = doc.data();
           if ((data['paymentStatus'] as String? ?? '') == 'paid') {
             totalSpent += (data['amount'] as num?)?.toInt() ?? 0;
           }
@@ -311,10 +343,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     ],
                   ),
                 ),
-                ...dayDocs.map(
-                  (doc) =>
-                      _buildBookingCard(doc.data() as Map<String, dynamic>),
-                ),
+                ...dayDocs.map((doc) => _buildBookingCard(doc.data())),
               ];
             }),
           ],
@@ -381,7 +410,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -553,7 +582,7 @@ class _SummaryCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),

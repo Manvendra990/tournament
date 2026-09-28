@@ -172,7 +172,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: _green.withOpacity(.10),
+                  color: _green.withValues(alpha: .10),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -269,7 +269,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(.12),
+                      color: AppColors.primary.withValues(alpha: .12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -550,14 +550,14 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: a.selected
-                                          ? AppColors.primary.withOpacity(.10)
+                                          ? AppColors.primary.withValues(alpha: .10)
                                           : AppColors.card,
                                       borderRadius: BorderRadius.circular(30),
                                       border: Border.all(
                                         color: a.selected
                                             ? AppColors.primary
-                                            : AppColors.primary.withOpacity(
-                                                .12,
+                                            : AppColors.primary.withValues(
+                                                alpha: .12,
                                               ),
                                         width: a.selected ? 1.5 : 1,
                                       ),
@@ -631,13 +631,13 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide(
-                                    color: AppColors.border!,
+                                    color: AppColors.border,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide(
-                                    color: AppColors.border!,
+                                    color: AppColors.border,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -692,7 +692,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               disabledBackgroundColor: AppColors.primary
-                                  .withOpacity(0.5),
+                                  .withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -772,7 +772,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -797,7 +797,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                 decoration: BoxDecoration(
                   color: _greenLight,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _green.withOpacity(0.2)),
+                  border: Border.all(color: _green.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -805,14 +805,14 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                     Icon(
                       Icons.add_photo_alternate_outlined,
                       size: 44,
-                      color: _green.withOpacity(0.7),
+                      color: _green.withValues(alpha: 0.7),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Tap to add ground photos',
                       style: TextStyle(
                         fontSize: 13,
-                        color: _green.withOpacity(0.8),
+                        color: _green.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -879,7 +879,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                     decoration: BoxDecoration(
                       color: _greenLight,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: _green.withOpacity(0.3)),
+                      border: Border.all(color: _green.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -938,11 +938,11 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.border!, width: 1),
+          borderSide: BorderSide(color: AppColors.border, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.border!, width: 1),
+          borderSide: BorderSide(color: AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -962,7 +962,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border!, width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -1020,6 +1020,5 @@ class _AmenityOption {
   _AmenityOption({
     required this.label,
     required this.icon,
-    this.selected = false,
-  });
+  }) : selected = false;
 }

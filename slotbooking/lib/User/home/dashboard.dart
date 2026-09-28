@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Banner carousel
   final PageController _bannerCtrl = PageController();
-  int _bannerPage = 0;
+  final int _bannerPage = 0;
 
   static const _sports = [
     {'label': 'All', 'icon': Icons.sports},
@@ -36,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {'label': 'Swimming', 'icon': Icons.pool},
     {'label': 'Badminton', 'icon': Icons.sports_kabaddi},
     {'label': 'Basketball', 'icon': Icons.sports_basketball},
+    {'label': 'Volleyball', 'icon': Icons.sports_volleyball},
   ];
 
   static const _banners = [
@@ -329,7 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: const Color(0xFFD0021B).withOpacity(0.3),
+                                color: const Color(
+                                  0xFFD0021B,
+                                ).withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -532,7 +535,7 @@ class _GroundCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -555,7 +558,7 @@ class _GroundCard extends StatelessWidget {
                         ? CachedNetworkImage(
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
+                            placeholder: (_, _) => Container(
                               color: Colors.grey[200],
                               child: const Center(
                                 child: CircularProgressIndicator(
@@ -564,7 +567,7 @@ class _GroundCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            errorWidget: (_, __, ___) => Container(
+                            errorWidget: (_, _, _) => Container(
                               color: Colors.grey[200],
                               child: const Icon(
                                 Icons.image_not_supported_outlined,

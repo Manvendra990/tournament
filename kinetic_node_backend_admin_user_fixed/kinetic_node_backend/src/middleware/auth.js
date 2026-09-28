@@ -22,3 +22,4 @@ const authorize = (...roles) => (req, _res, next) => {
   next();
 };
 module.exports = { authenticate, authorize };
+

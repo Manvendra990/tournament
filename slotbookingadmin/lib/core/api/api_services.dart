@@ -206,8 +206,8 @@ class SlotApi {
     await _api.patch(
       '/slots/$id',
       body: {
-        if (status != null) 'status': status,
-        if (price != null) 'price': price,
+        'status': ?status,
+        'price': ?price,
       },
     );
   }
@@ -234,7 +234,7 @@ class BookingApi {
 
                 if (to != null) 'to': to.toIso8601String().split('T').first,
 
-                if (status != null) 'status': status,
+                'status': ?status,
               },
             )
             as List)
@@ -251,7 +251,7 @@ class BookingApi {
   Future<void> cancel(String id, {String? reason}) async {
     await _api.patch(
       '/bookings/$id/cancel',
-      body: {if (reason != null) 'reason': reason},
+      body: {'reason': ?reason},
     );
   }
 }
@@ -295,11 +295,11 @@ class ProfileApi {
         'PATCH',
         '/profile',
         fields: {
-          if (name != null) 'name': name,
+          'name': ?name,
 
-          if (phone != null) 'phone': phone,
+          'phone': ?phone,
 
-          if (bio != null) 'bio': bio,
+          'bio': ?bio,
         },
 
         files: photo == null ? [] : [photo],

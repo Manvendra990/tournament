@@ -49,13 +49,19 @@ class _OtpInputState extends State<OtpInput> {
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
   void _clearAll() {
-    for (final c in _controllers) c.clear();
+    for (final c in _controllers) {
+      c.clear();
+    }
     _focusNodes[0].requestFocus();
     setState(() {});
     widget.onChanged?.call('');

@@ -37,7 +37,7 @@ class UserNavBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryRed.withOpacity(0.10),
+            color: AppTheme.primaryRed.withValues(alpha: 0.10),
             blurRadius: 22,
             offset: const Offset(0, -4),
           ),

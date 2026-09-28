@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:slotbooking/User/navbar/usernavbar.dart';
 import 'package:slotbooking/data/theam/app_theam.dart';
-import 'package:slotbooking/shared/widgets/apptext.dart';
 import 'package:slotbooking/core/api/api_services.dart';
 import 'package:slotbooking/core/api/session_manager.dart';
 
@@ -170,7 +169,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: filters.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
           itemBuilder: (_, i) {
             final isActive = _activeFilter == filters[i];
             return GestureDetector(
@@ -219,11 +218,12 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _loadTransactions(),
       builder: (context, snap) {
-        if (snap.hasError)
+        if (snap.hasError) {
           return _buildEmpty(
             'Error loading transactions.',
             Icons.error_outline,
           );
+        }
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: AppTheme.primaryRed),
@@ -232,22 +232,23 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         final docs = (snap.data ?? const <Map<String, dynamic>>[])
             .map(ApiDocument.new)
             .toList();
-        if (docs.isEmpty)
+        if (docs.isEmpty) {
           return _buildEmpty(
             'No transactions found',
             Icons.receipt_long_outlined,
           );
+        }
 
         final groups = _groupByDate(docs);
         final dates = groups.keys.toList()..sort((a, b) => b.compareTo(a));
 
         int totalPaid = 0, totalRefund = 0;
         for (final doc in docs) {
-          final data = doc.data() as Map<String, dynamic>;
+          final data = doc.data();
           final amount = (data['amount'] as num?)?.toInt() ?? 0;
-          if (_isRefund(data))
+          if (_isRefund(data)) {
             totalRefund += amount;
-          else if (_isPaid(data))
+          } else if (_isPaid(data))
             totalPaid += amount;
         }
 
@@ -291,7 +292,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   ),
                 ),
                 ...dayDocs.map(
-                  (doc) => _buildTxnCard(doc.data() as Map<String, dynamic>),
+                  (doc) => _buildTxnCard(doc.data()),
                 ),
               ];
             }),
@@ -371,7 +372,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -531,7 +532,7 @@ class _SummaryCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),

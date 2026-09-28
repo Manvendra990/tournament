@@ -127,7 +127,7 @@ class _AdminRegisterScreenState extends ConsumerState<AdminRegisterScreen>
                     color: _greenLight,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _green.withOpacity(0.2),
+                      color: _green.withValues(alpha: 0.2),
                       width: 6,
                     ),
                   ),
@@ -269,7 +269,7 @@ class _AdminRegisterScreenState extends ConsumerState<AdminRegisterScreen>
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.07),
+                            color: Colors.black.withValues(alpha: 0.07),
                             blurRadius: 24,
                             offset: const Offset(0, 6),
                           ),
@@ -323,12 +323,14 @@ class _AdminRegisterScreenState extends ConsumerState<AdminRegisterScreen>
                               prefixIcon: Icons.mail_outline_rounded,
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Email required';
+                                }
                                 if (!RegExp(
                                   r'^[\w.-]+@[\w.-]+\.\w+$',
-                                ).hasMatch(v))
+                                ).hasMatch(v)) {
                                   return 'Invalid email address';
+                                }
                                 return null;
                               },
                             ),
@@ -370,8 +372,9 @@ class _AdminRegisterScreenState extends ConsumerState<AdminRegisterScreen>
                                 ),
                               ),
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Password required';
+                                }
                                 if (v.length < 6) return 'Minimum 6 characters';
                                 return null;
                               },
@@ -399,10 +402,12 @@ class _AdminRegisterScreenState extends ConsumerState<AdminRegisterScreen>
                                 ),
                               ),
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Please confirm password';
-                                if (v != _passCtrl.text)
+                                }
+                                if (v != _passCtrl.text) {
                                   return 'Passwords do not match';
+                                }
                                 return null;
                               },
                             ),
@@ -480,8 +485,8 @@ class _AdminRegisterScreenState extends ConsumerState<AdminRegisterScreen>
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(50),
                                   ),
-                                  disabledBackgroundColor: _green.withOpacity(
-                                    0.5,
+                                  disabledBackgroundColor: _green.withValues(
+                                    alpha: 0.5,
                                   ),
                                 ),
                                 child: authState.isLoading
@@ -574,7 +579,7 @@ class _StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -615,7 +620,7 @@ class _InfoChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -628,7 +633,7 @@ class _InfoChip extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  color: color.withOpacity(0.7),
+                  color: color.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w500,
                 ),
               ),

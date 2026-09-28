@@ -135,7 +135,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                       child: Container(
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -149,7 +149,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                       Container(
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -177,10 +177,10 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                                       CachedNetworkImage(
                                         imageUrl: images[i],
                                         fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(
+                                        placeholder: (_, _) => Container(
                                           color: Colors.grey.shade800,
                                         ),
-                                        errorWidget: (_, __, ___) => Container(
+                                        errorWidget: (_, _, _) => Container(
                                           color: Colors.grey.shade800,
                                           child: const Icon(
                                             Icons.image_not_supported_outlined,
@@ -325,7 +325,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
@@ -513,7 +513,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                                     height: 160,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
-                                    errorWidget: (_, __, ___) => Container(
+                                    errorWidget: (_, _, _) => Container(
                                       height: 160,
                                       color: Colors.grey.shade300,
                                     ),
@@ -521,7 +521,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                                   // Dark overlay
                                   Container(
                                     height: 160,
-                                    color: Colors.black.withOpacity(0.35),
+                                    color: Colors.black.withValues(alpha: 0.35),
                                   ),
                                   // Directions card
                                   Positioned(
@@ -555,7 +555,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: AppTheme.primaryRed
-                                                        .withOpacity(0.1),
+                                                        .withValues(alpha: 0.1),
                                                     shape: BoxShape.circle,
                                                   ),
                                                   child: const Icon(
@@ -655,7 +655,7 @@ class _GroundDetailScreenState extends State<GroundDetailScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, -3),
             ),
@@ -751,7 +751,7 @@ class _AmenityChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6),
         ],
       ),
       child: Row(

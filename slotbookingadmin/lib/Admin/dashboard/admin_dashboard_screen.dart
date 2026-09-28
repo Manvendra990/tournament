@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:slotbookingadmin/Admin/header/admin_header.dart';
 import 'package:slotbookingadmin/Admin/navbar/adminNavbar.dart';
-import 'package:slotbookingadmin/theme/app_theme.dart';
 import 'package:slotbookingadmin/theme/app_colors.dart';
 import 'package:slotbookingadmin/theme/app_spacing.dart';
 
@@ -168,8 +167,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             child: _ActionButton(
                               label: 'Create Slots',
                               icon: Icons.block_rounded,
-                              backgroundColor: AppColors.primary.withOpacity(
-                                .08,
+                              backgroundColor: AppColors.primary.withValues(
+                                alpha: .08,
                               ),
                               textColor: AppColors.primary,
                               onTap: () => context.go('/admin/slotmanagement'),
@@ -212,7 +211,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -259,7 +258,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.8),
+              color: AppColors.primary.withValues(alpha: 0.8),
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.primary, width: 2),
             ),
@@ -320,7 +319,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -421,7 +420,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: AppColors.primary.withValues(alpha: 0.08),
                     ),
                   ),
                 ],
@@ -475,7 +474,7 @@ class _MetricCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -499,7 +498,7 @@ class _MetricCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(.1),
+                  color: AppColors.primary.withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, size: 18, color: AppColors.primary),
@@ -551,7 +550,7 @@ class _OccupancyCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -575,7 +574,7 @@ class _OccupancyCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(.1),
+                  color: AppColors.primary.withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -771,7 +770,7 @@ class _BookingRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: isConfirmed
-                  ? AppColors.primary.withOpacity(.1)
+                  ? AppColors.primary.withValues(alpha: .1)
                   : Colors.orange[50],
               borderRadius: BorderRadius.circular(20),
             ),

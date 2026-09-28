@@ -80,7 +80,7 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
           Image.asset(
             'assets/images/goarena.png',
             fit: BoxFit.cover,
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             colorBlendMode: BlendMode.darken,
           ),
           Container(
@@ -117,7 +117,7 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryRed.withOpacity(0.45),
+                              color: AppTheme.primaryRed.withValues(alpha: 0.45),
                               blurRadius: 22,
                             ),
                           ],
@@ -141,7 +141,7 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                       'Register once, then login using your username\nor mobile number with your password.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.62),
+                        color: Colors.white.withValues(alpha: 0.62),
                         height: 1.45,
                       ),
                     ),
@@ -226,7 +226,7 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryRed,
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor: AppTheme.primaryRed.withOpacity(0.55),
+                          disabledBackgroundColor: AppTheme.primaryRed.withValues(alpha: 0.55),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                         ),
                         child: _isLoading
@@ -248,7 +248,7 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Already registered? ', style: TextStyle(color: Colors.white.withOpacity(0.62))),
+                        Text('Already registered? ', style: TextStyle(color: Colors.white.withValues(alpha: 0.62))),
                         TextButton(
                           onPressed: _isLoading ? null : () => context.go('/user/login'),
                           child: const Text(
@@ -324,15 +324,15 @@ class _RegisterField extends StatelessWidget {
           cursorColor: AppTheme.primaryRed,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.38)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.38)),
             prefixIcon: Icon(icon, color: Colors.white60),
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: Colors.white.withOpacity(0.09),
+            fillColor: Colors.white.withValues(alpha: 0.09),
             errorStyle: const TextStyle(color: Color(0xFFFF8A96)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.13)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.13)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),

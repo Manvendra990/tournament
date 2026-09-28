@@ -1,6 +1,5 @@
 import 'package:slotbookingadmin/core/api/api_compat.dart';
 import 'package:slotbookingadmin/core/api/api_services.dart';
-import 'package:slotbookingadmin/core/api/api_parsers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:slotbookingadmin/Admin/navbar/adminNavbar.dart';
@@ -189,7 +188,7 @@ class _AdminGroundsScreenState extends State<AdminGroundsScreen> {
                       }
 
                       final doc = docs[index];
-                      final data = doc.data() as Map<String, dynamic>;
+                      final data = doc.data();
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 20),
                         child: _GroundCard(
@@ -258,7 +257,7 @@ class _GroundCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -470,7 +469,7 @@ class _GroundCard extends StatelessWidget {
         width: double.infinity,
         height: 200,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholderImage(),
+        errorBuilder: (_, _, _) => _placeholderImage(),
       );
     }
     // If images is a list with URLs
@@ -482,7 +481,7 @@ class _GroundCard extends StatelessWidget {
           width: double.infinity,
           height: 200,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _placeholderImage(),
+          errorBuilder: (_, _, _) => _placeholderImage(),
         );
       }
     }
