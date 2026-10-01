@@ -164,3 +164,13 @@ CREATE TABLE IF NOT EXISTS user_otps (
   PRIMARY KEY (id),
   KEY idx_user_otps_phone_expiry (phone, expires_at)
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ground_fieldname (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  fieldname VARCHAR(150) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ground_fieldname_name (fieldname)
+) ENGINE=InnoDB;

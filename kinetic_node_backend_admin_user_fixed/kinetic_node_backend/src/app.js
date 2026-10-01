@@ -40,6 +40,7 @@ app.use("/api/v1/bookings", require("./routes/booking.routes"));
 app.use("/api/v1/payments", require("./routes/payment.routes"));
 app.use("/api/v1/dashboard", require("./routes/dashboard.routes"));
 app.use("/api/v1/admin", require("./routes/admin.routes"));
+app.use("/api/v1/ground_fieldname",require("./routes/ground_fieldname.routes"));
 app.use(notFound);
 app.use(errorHandler);
 module.exports = app;
