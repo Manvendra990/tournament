@@ -4,47 +4,37 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:slotbookingadmin/Admin/navbar/adminNavbar.dart';
 import 'package:slotbookingadmin/theme/app_colors.dart';
-
 class AddSlotScreen extends StatefulWidget {
   const AddSlotScreen({super.key});
-
   @override
   State<AddSlotScreen> createState() => _AddSlotScreenState();
 }
-
 class _AddSlotScreenState extends State<AddSlotScreen> {
   static const _greenLight = Color(0xFFE8F5EE);
-
   bool _isLoading = false;
   bool _isSaving = false;
-
   // Form state
   String? _selectedGroundId;
+  String? _selectedSport;
   DateTime _slotDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 6, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 7, minute: 0);
   final _amountCtrl = TextEditingController();
-
   List<Map<String, dynamic>> _grounds = [];
-
   final _groundApi = GroundApi();
   final _slotApi = SlotApi();
-
   // Slots created in this session
   final List<_SlotEntry> _createdSlots = [];
-
   @override
   void initState() {
     super.initState();
     _loadGrounds();
   }
-
   @override
   void dispose() {
     _amountCtrl.dispose();
     super.dispose();
   }
-
   // ── Load admin's grounds ───────────────────────────────────────────────────
   Future<void> _loadGrounds() async {
     setState(() => _isLoading = true);
@@ -67,7 +57,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
   List<Map<String, dynamic>> _normalizeGrounds(
     List<Map<String, dynamic>> rows,
   ) => rows
@@ -75,216 +64,59 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
         (ground) => {
           'id': (ground['id'] ?? ground['_id'] ?? '').toString(),
           'name': (ground['name'] ?? 'Ground').toString(),
+          'sports': _parseSports(ground['sportType'] ?? ground['sport_type']),
         },
       )
       .where((ground) => (ground['id'] as String).isNotEmpty)
       .toList();
-
   String? get _selectedGroundName {
     for (final ground in _grounds) {
       if (ground['id'] == _selectedGroundId) return ground['name'] as String;
     }
     return null;
   }
-
   void _selectGround(String id) {
     if (!_grounds.any((ground) => ground['id'] == id)) return;
-    setState(() => _selectedGroundId = id);
+    setState(() {
+      _selectedGroundId = id;
+      _selectedSport = null;
+    });
+  }
+  List<String> _parseSports(dynamic value) {
+    final values = value is List ? value : (value ?? '').toString().split(',');
+    return values.map((e) => e.toString().trim())
+        .where((e) => e.isNotEmpty).toSet().toList();
   }
 
-  Future<void> _showAddGroundDialog() async {
-    var enteredName = '';
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        var isAdding = false;
-        String? errorMessage;
+  List<String> get _availableSports {
+    for (final ground in _grounds) {
+      if (ground['id'] == _selectedGroundId) {
+        return List<String>.from(ground['sports'] as List);
+      }
+    }
+    return [];
+  }
 
-        return StatefulBuilder(
-          builder: (context, setDialogState) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(22),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Add New Ground',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0E1A13),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _fieldLabel('Ground Name'),
-                  const SizedBox(height: 8),
-                  TextField(
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.words,
-                    enabled: !isAdding,
-                    decoration: InputDecoration(
-                      hintText: 'Enter ground name',
-                      errorText: errorMessage,
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFB),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 13,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey[200]!),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey[200]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      enteredName = value;
-                      if (errorMessage != null) {
-                        setDialogState(() => errorMessage = null);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 22),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: isAdding
-                            ? null
-                            : () => Navigator.of(dialogContext).pop(),
-                        child: const Text('Cancel'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: isAdding
-                            ? null
-                            : () async {
-                                final name = enteredName.trim();
-                                if (name.isEmpty) {
-                                  setDialogState(
-                                    () => errorMessage =
-                                        'Please enter a ground name.',
-                                  );
-                                  return;
-                                }
-
-                                final normalizedName = name.toLowerCase();
-                                Map<String, dynamic>? existingGround;
-                                for (final ground in _grounds) {
-                                  if ((ground['name'] as String)
-                                          .trim()
-                                          .toLowerCase() ==
-                                      normalizedName) {
-                                    existingGround = ground;
-                                    break;
-                                  }
-                                }
-                                if (existingGround != null) {
-                                  _selectGround(existingGround['id'] as String);
-                                  Navigator.of(dialogContext).pop();
-                                  _showSnack(
-                                    'This ground already exists.',
-                                    Colors.orange[800]!,
-                                  );
-                                  return;
-                                }
-
-                                setDialogState(() {
-                                  isAdding = true;
-                                  errorMessage = null;
-                                });
-                                try {
-                                  final created = await _groundApi.create(
-                                    data: {'name': name},
-                                  );
-                                  final savedGround = {
-                                    'id':
-                                        (created['id'] ?? created['_id'] ?? '')
-                                            .toString(),
-                                    'name': (created['name'] ?? name)
-                                        .toString(),
-                                  };
-                                  if ((savedGround['id'] as String).isEmpty) {
-                                    throw Exception(
-                                      'The API did not return the new ground ID.',
-                                    );
-                                  }
-
-                                  var refreshedGrounds =
-                                      List<Map<String, dynamic>>.from(_grounds);
-                                  String? refreshError;
-                                  try {
-                                    refreshedGrounds = _normalizeGrounds(
-                                      await _groundApi.mine(),
-                                    );
-                                  } catch (error) {
-                                    refreshError = error.toString();
-                                  }
-                                  if (!refreshedGrounds.any(
-                                    (ground) =>
-                                        ground['id'] == savedGround['id'],
-                                  )) {
-                                    refreshedGrounds.insert(0, savedGround);
-                                  }
-
-                                  if (!mounted || !dialogContext.mounted) {
-                                    return;
-                                  }
-                                  setState(() {
-                                    _grounds = refreshedGrounds;
-                                    _selectedGroundId =
-                                        savedGround['id'] as String;
-                                  });
-                                  Navigator.of(dialogContext).pop();
-                                  if (refreshError != null) {
-                                    _showSnack(
-                                      'Ground added, but refreshing the list failed: $refreshError',
-                                      Colors.orange[800]!,
-                                    );
-                                  }
-                                } catch (error) {
-                                  if (dialogContext.mounted) {
-                                    setDialogState(() {
-                                      isAdding = false;
-                                      errorMessage = error.toString();
-                                    });
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(isAdding ? 'Adding...' : 'Add Ground'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  Widget _buildSportSelector() {
+    final sports = _availableSports;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _fieldLabel('Sport Type'),
+      const SizedBox(height: 8),
+      if (sports.isEmpty)
+        const Text('Is ground mein game add nahi hai. Edit Ground mein games select karein.')
+      else
+        DropdownButtonFormField<String>(
+          key: ValueKey('$_selectedGroundId:$_selectedSport'),
+          value: sports.contains(_selectedSport) ? _selectedSport : null,
+          isExpanded: true,
+          hint: const Text('Select sport'),
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+          items: sports.map((sport) => DropdownMenuItem(
+            value: sport, child: Text(sport),
+          )).toList(),
+          onChanged: _isSaving ? null : (value) => setState(() => _selectedSport = value),
+        ),
+    ]);
   }
 
   // ── Pick date ──────────────────────────────────────────────────────────────
@@ -303,7 +135,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     );
     if (picked != null) setState(() => _slotDate = picked);
   }
-
   // ── Pick time ──────────────────────────────────────────────────────────────
   Future<void> _pickTime({required bool isStart}) async {
     final picked = await showTimePicker(
@@ -325,18 +156,14 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     //     }
     //   });
     // }
-
     if (picked == null) return;
-
     if (_isTimeInPast(picked)) {
       _showSnack(
         "Selected time has already passed. Please choose a future time",
         Colors.orange[700]!,
       );
-
       return;
     }
-
     setState(() {
       if (isStart) {
         _startTime = picked;
@@ -345,18 +172,14 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       }
     });
   }
-
   // check if a time is already in the past or not
-
   bool _isTimeInPast(TimeOfDay time) {
     final now = DateTime.now();
     final isToday =
         _slotDate.year == now.year &&
         _slotDate.month == now.month &&
         _slotDate.day == now.day;
-
     if (!isToday) return false;
-
     final selected = DateTime(
       _slotDate.year,
       _slotDate.month,
@@ -364,18 +187,21 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       time.hour,
       time.minute,
     );
-
     return selected.isBefore(now);
   }
-
   // ── Validate slot ──────────────────────────────────────────────────────────
   bool _validateSlot() {
     if (_selectedGroundId == null) {
       _showSnack('Please select a ground.', Colors.orange[700]!);
       return false;
     }
-    if (_amountCtrl.text.trim().isEmpty) {
-      _showSnack('Please enter slot amount.', Colors.orange[700]!);
+    if (!_availableSports.contains(_selectedSport)) {
+      _showSnack('Please select a sport for this ground.', Colors.orange[700]!);
+      return false;
+    }
+    final amount = num.tryParse(_amountCtrl.text.trim());
+    if (amount == null || !amount.isFinite || amount <= 0) {
+      _showSnack('Please enter a valid amount greater than zero.', Colors.orange[700]!);
       return false;
     }
     final startMinutes = _startTime.hour * 60 + _startTime.minute;
@@ -384,7 +210,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       _showSnack('End time must be after start time.', Colors.orange[700]!);
       return false;
     }
-
     // prevent saving expired slots for today
     if (_isTimeInPast(_startTime)) {
       _showSnack(
@@ -395,12 +220,10 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     }
     return true;
   }
-
   // ── Build DateTime from date + TimeOfDay ───────────────────────────────────
   DateTime _toDateTime(DateTime date, TimeOfDay time) {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
-
   // ── Add slot to session list ───────────────────────────────────────────────
   void _addToList() {
     if (!_validateSlot()) return;
@@ -409,10 +232,11 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
         _SlotEntry(
           groundId: _selectedGroundId!,
           groundName: _selectedGroundName ?? 'Ground',
+          sportType: _selectedSport!,
           date: _slotDate,
           startTime: _startTime,
           endTime: _endTime,
-          amount: int.tryParse(_amountCtrl.text.trim()) ?? 0,
+          amount: num.parse(_amountCtrl.text.trim()),
         ),
       );
       // Reset time fields for next slot
@@ -424,7 +248,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       _amountCtrl.clear();
     });
   }
-
   // ── Save all slots through REST API ──────────────────────────────────────
   Future<void> _saveSlots() async {
     if (_createdSlots.isEmpty) {
@@ -437,11 +260,11 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
           .map(
             (slot) => {
               'groundId': slot.groundId,
+              'sportType': slot.sportType,
               'date': slot.date.toIso8601String().split('T').first,
               'startTime':
                   '${slot.startTime.hour.toString().padLeft(2, '0')}:'
                   '${slot.startTime.minute.toString().padLeft(2, '0')}:00',
-
               'endTime':
                   '${slot.endTime.hour.toString().padLeft(2, '0')}:'
                   '${slot.endTime.minute.toString().padLeft(2, '0')}:00',
@@ -462,7 +285,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       if (mounted) setState(() => _isSaving = false);
     }
   }
-
   void _showSnack(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -473,7 +295,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ),
     );
   }
-
   void _showSuccessDialog(int count) {
     showDialog(
       context: context,
@@ -560,7 +381,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -596,7 +416,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                 ],
               ),
             ),
-
             // ── Body ─────────────────────────────────────────────────────────
             Expanded(
               child: _isLoading
@@ -644,81 +463,15 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 18),
-
-                                // Ground picker
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _fieldLabel('Select Ground'),
-                                    TextButton.icon(
-                                      onPressed: _showAddGroundDialog,
-                                      icon: const Icon(
-                                        Icons.add_rounded,
-                                        size: 17,
-                                      ),
-                                      label: const Text('Add'),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: AppColors.primary,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        textStyle: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                _grounds.isEmpty
-                                    ? Container(
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.textPrimary,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.orange[200]!,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.warning_amber_rounded,
-                                              color: Colors.orange[700],
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                'No grounds found. Add a ground first.',
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color: Colors.orange[800],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : _buildGroundDropdown(),
-
-                                const SizedBox(height: 14),
                                 _buildGroundsSection(),
                                 const SizedBox(height: 14),
-
+                                _buildSportSelector(),
+                                const SizedBox(height: 14),
                                 // Date picker
                                 _fieldLabel('Slot Date'),
                                 const SizedBox(height: 8),
                                 _buildDateTile(),
                                 const SizedBox(height: 14),
-
                                 // Time pickers
                                 _fieldLabel('Time Range'),
                                 const SizedBox(height: 8),
@@ -750,9 +503,7 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                     ),
                                   ],
                                 ),
-
                                 const SizedBox(height: 14),
-
                                 // Amount
                                 _fieldLabel('Amount (₹)'),
                                 const SizedBox(height: 8),
@@ -800,14 +551,10 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                     ),
                                   ),
                                 ),
-
                                 const SizedBox(height: 16),
-
                                 // Duration preview
                                 _buildDurationPreview(),
-
                                 const SizedBox(height: 16),
-
                                 // Add to list button
                                 SizedBox(
                                   width: double.infinity,
@@ -839,7 +586,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                               ],
                             ),
                           ),
-
                           // ── Pending slots list ───────────────────────────
                           if (_createdSlots.isNotEmpty) ...[
                             const SizedBox(height: 16),
@@ -882,9 +628,7 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                 ),
                               );
                             }),
-
                             const SizedBox(height: 16),
-
                             // Save all
                             SizedBox(
                               width: double.infinity,
@@ -926,13 +670,11 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                               ),
                             ),
                           ],
-
                           const SizedBox(height: 16),
                         ],
                       ),
                     ),
             ),
-
             // ── Nav bar ──────────────────────────────────────────────────────
             const AdminNavBar(currentIndex: 2),
           ],
@@ -940,44 +682,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ),
     );
   }
-
-  Widget _buildGroundDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFB),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedGroundId,
-          isExpanded: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey[500],
-          ),
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF0E1A13),
-            fontWeight: FontWeight.w500,
-          ),
-          items: _grounds
-              .map(
-                (g) => DropdownMenuItem<String>(
-                  value: g['id'] as String,
-                  child: Text(g['name'] as String),
-                ),
-              )
-              .toList(),
-          onChanged: (v) {
-            if (v != null) _selectGround(v);
-          },
-        ),
-      ),
-    );
-  }
-
   Widget _buildGroundsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,7 +707,7 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
               final selected = ground['id'] == _selectedGroundId;
               return ChoiceChip(
                 selected: selected,
-                onSelected: (_) => _selectGround(ground['id'] as String),
+                onSelected: _isSaving ? null : (_) => _selectGround(ground['id'] as String),
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1030,7 +734,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ],
     );
   }
-
   Widget _buildDateTile() {
     return GestureDetector(
       onTap: _pickDate,
@@ -1064,7 +767,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ),
     );
   }
-
   Widget _buildTimeTile({
     required String label,
     required TimeOfDay time,
@@ -1105,19 +807,16 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ),
     );
   }
-
   Widget _buildDurationPreview() {
     final startMinutes = _startTime.hour * 60 + _startTime.minute;
     final endMinutes = _endTime.hour * 60 + _endTime.minute;
     final diffMinutes = endMinutes - startMinutes;
     final isValid = diffMinutes > 0;
-
     final hours = diffMinutes ~/ 60;
     final mins = diffMinutes % 60;
     final durationText = isValid
         ? (hours > 0 ? '${hours}h ${mins > 0 ? '${mins}m' : ''}' : '${mins}m')
         : 'Invalid time range';
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -1157,7 +856,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       ),
     );
   }
-
   Widget _fieldLabel(String text) {
     return Text(
       text,
@@ -1169,21 +867,17 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     );
   }
 }
-
 // ── Slot list item ────────────────────────────────────────────────────────────
 class _SlotListItem extends StatelessWidget {
   final _SlotEntry slot;
   final int index;
   final VoidCallback onDelete;
-
   const _SlotListItem({
     required this.slot,
     required this.index,
     required this.onDelete,
   });
-
   static const _green = Color(0xFF0D5C3A);
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1218,7 +912,7 @@ class _SlotListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  slot.groundName,
+                  '${slot.groundName} • ${slot.sportType}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -1251,12 +945,10 @@ class _SlotListItem extends StatelessWidget {
     );
   }
 }
-
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 class _Card extends StatelessWidget {
   final Widget child;
   const _Card({required this.child});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1277,19 +969,19 @@ class _Card extends StatelessWidget {
     );
   }
 }
-
 // ── Slot entry model ──────────────────────────────────────────────────────────
 class _SlotEntry {
   final String groundId;
   final String groundName;
+  final String sportType;
   final DateTime date;
   final TimeOfDay startTime;
   final TimeOfDay endTime;
-  final int amount;
-
+  final num amount;
   const _SlotEntry({
     required this.groundId,
     required this.groundName,
+    required this.sportType,
     required this.date,
     required this.startTime,
     required this.endTime,

@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS ground_images (
 CREATE TABLE IF NOT EXISTS slots (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   ground_id BIGINT UNSIGNED NOT NULL,
+  sport_type VARCHAR(80) NOT NULL DEFAULT '',
   slot_date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
@@ -73,10 +74,13 @@ CREATE TABLE IF NOT EXISTS slots (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_slot_ground_date_time (ground_id, slot_date, start_time, end_time),
+UNIQUE KEY uq_slot_ground_sport_date_time (
+  ground_id, sport_type, slot_date, start_time, end_time
+),
   UNIQUE KEY uq_slots_firebase_id (firebase_id),
   KEY idx_slots_ground_date_status (ground_id, slot_date, status),
-  CONSTRAINT fk_slots_ground FOREIGN KEY (ground_id) REFERENCES grounds(id) ON DELETE CASCADE
+  CONSTRAINT fk_slots_ground FOREIGN KEY (ground_id)
+    REFERENCES grounds(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS bookings (

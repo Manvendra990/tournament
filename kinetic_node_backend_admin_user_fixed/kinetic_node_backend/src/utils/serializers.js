@@ -38,6 +38,7 @@ function slot(row) {
   return {
     id: String(row.id),
     groundId: String(row.ground_id),
+    sportType: row.sport_type || '',
     date: row.slot_date,
     startTime: timeString(row.start_time),
     endTime: timeString(row.end_time),

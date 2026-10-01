@@ -7,35 +7,235 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:slotbookingadmin/theme/app_colors.dart';
-
 class AddGroundScreen extends StatefulWidget {
-  const AddGroundScreen({super.key});
-
+  const AddGroundScreen({super.key, this.groundId});
+  final String? groundId;
   @override
   State<AddGroundScreen> createState() => _AddGroundScreenState();
 }
-
 class _AddGroundScreenState extends State<AddGroundScreen> {
   static const _green = Color(0xFF0D5C3A);
   static const _greenLight = Color(0xFFE8F5EE);
-
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
+  final Set<String> _selectedSports = {'Cricket'};
+  final _fieldnameApi = GroundFieldnameApi();
+  List<Map<String, dynamic>> _groundNames = [];
+  String? _selectedNameId;
+  bool _namesLoading = true;
+  String? _namesError;
+  bool _loadingGround = false;
+  String? _groundLoadError;
+  List<String> _existingImages = [];
+  Map<String, dynamic> _existingPricing = {};
+  bool get _isEditing => widget.groundId != null;
 
-  String _sportType = 'Cricket';
+  @override
+  void initState() {
+    super.initState();
+    _initializeGround();
+  }
+
+  Future<void> _initializeGround() async {
+    setState(() { _loadingGround = _isEditing; _groundLoadError = null; });
+    if (_isEditing) {
+      try {
+        final ground = await GroundApi().getOne(widget.groundId!);
+        if (!mounted) return;
+        _nameCtrl.text = (ground['name'] ?? '').toString();
+        _cityCtrl.text = (ground['city'] ?? '').toString();
+        _addressCtrl.text = (ground['address'] ?? ground['location'] ?? '').toString();
+        _descCtrl.text = (ground['rules'] ?? ground['description'] ?? '').toString();
+        final rawSports = ground['sportType'];
+        final sports = rawSports is List
+            ? rawSports.map((x) => x.toString()).toList()
+            : (rawSports ?? '').toString().split(',');
+        _selectedSports.clear();
+        for (final sport in sports) {
+          final name = sport.trim();
+          if (name.isEmpty) continue;
+          if (!_sportTypes.contains(name)) _sportTypes.add(name);
+          _selectedSports.add(name);
+        }
+        final amenities = List<String>.from(ground['amenities'] ?? []);
+        for (final option in _amenities) {
+          option.selected = amenities.contains(option.label);
+        }
+        _existingImages = List<String>.from(ground['images'] ?? []);
+        _existingPricing = Map<String, dynamic>.from(ground['pricing'] ?? {});
+        final lat = double.tryParse('${ground['latitude'] ?? ''}');
+        final lng = double.tryParse('${ground['longitude'] ?? ''}');
+        if (lat != null && lng != null && (lat != 0 || lng != 0)) {
+          _lat = lat; _lng = lng;
+        }
+      } catch (error) {
+        if (mounted) setState(() => _groundLoadError = error.toString());
+      } finally {
+        if (mounted) setState(() => _loadingGround = false);
+      }
+    }
+    await _loadGroundNames();
+  }
+
+  Future<void> _loadGroundNames() async {
+    if (!mounted) return;
+    setState(() { _namesLoading = true; _namesError = null; });
+    try {
+      final rows = await _fieldnameApi.list();
+      if (!mounted) return;
+      final names = rows.map((row) => <String, dynamic>{
+        'id': row['id'].toString(),
+        'fieldname': (row['fieldname'] ?? '').toString(),
+      }).toList();
+      // Older grounds may have a name absent from the shared names list.
+      String? selected;
+      for (final row in names) {
+        if (row['fieldname'].toString().toLowerCase() ==
+            _nameCtrl.text.trim().toLowerCase()) selected = row['id'] as String;
+      }
+      if (selected == null && _nameCtrl.text.trim().isNotEmpty) {
+        selected = 'existing:${widget.groundId}';
+        names.insert(0, {'id': selected, 'fieldname': _nameCtrl.text.trim()});
+      }
+      setState(() { _groundNames = names; _selectedNameId = selected; });
+    } catch (error) {
+      if (mounted) setState(() => _namesError = error.toString());
+    } finally {
+      if (mounted) setState(() => _namesLoading = false);
+    }
+  }
+
+  Future<void> _addGroundName() async {
+    final controller = TextEditingController();
+    bool adding = false;
+    String? error;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => PopScope(
+            canPop: !adding,
+            child: AlertDialog(
+              title: const Text('Add Ground Name'),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                enabled: !adding,
+                maxLength: 150,
+                decoration: InputDecoration(
+                  labelText: 'Ground Name', errorText: error,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: adding ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: adding ? null : () async {
+                    final name = controller.text.trim();
+                    if (name.isEmpty) {
+                      setDialogState(() => error = 'Enter a ground name');
+                      return;
+                    }
+                    for (final item in _groundNames) {
+                      if (item['fieldname'].toString().toLowerCase() == name.toLowerCase()) {
+                        setState(() {
+                          _selectedNameId = item['id'].toString();
+                          _nameCtrl.text = item['fieldname'].toString();
+                        });
+                        Navigator.pop(dialogContext);
+                        return;
+                      }
+                    }
+                    setDialogState(() { adding = true; error = null; });
+                    try {
+                      final saved = await _fieldnameApi.create(name);
+                      if (!mounted || !dialogContext.mounted) return;
+                      final id = saved['id']?.toString() ?? '';
+                      if (id.isEmpty) throw Exception('New ground name ID missing');
+                      final label = (saved['fieldname'] ?? name).toString();
+                      setState(() {
+                        _groundNames.add({'id': id, 'fieldname': label});
+                        _selectedNameId = id;
+                        _nameCtrl.text = label;
+                        _namesError = null;
+                      });
+                      Navigator.pop(dialogContext);
+                    } catch (e) {
+                      if (dialogContext.mounted) {
+                        setDialogState(() { adding = false; error = e.toString(); });
+                      }
+                    }
+                  },
+                  child: Text(adding ? 'Adding...' : 'Add'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } finally {
+      // Wait for the dialog's closing animation before disposing its input.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      controller.dispose();
+    }
+  }
+
+  Widget _buildGroundNameSelector() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(child: _fieldLabel('Select Ground')),
+            TextButton.icon(
+              onPressed: _isLoading || _namesLoading || _loadingGround
+                  ? null : _addGroundName,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add'),
+            ),
+          ]),
+          if (_namesLoading) const LinearProgressIndicator(),
+          if (_namesError != null) ...[
+            Text('Could not load ground names: $_namesError',
+                style: const TextStyle(color: Colors.red)),
+            TextButton(onPressed: _loadGroundNames, child: const Text('Retry')),
+          ],
+          DropdownButtonFormField<String>(
+            key: ValueKey(_selectedNameId),
+            value: _selectedNameId,
+            isExpanded: true,
+            hint: Text(_groundNames.isEmpty ? 'Add a ground name' : 'Select Ground'),
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+            items: _groundNames.map((item) => DropdownMenuItem<String>(
+              value: item['id'].toString(),
+              child: Text(item['fieldname'].toString(), overflow: TextOverflow.ellipsis),
+            )).toList(),
+            onChanged: _isLoading || _namesLoading || _loadingGround ? null : (id) {
+              if (id == null) return;
+              final row = _groundNames.firstWhere((item) => item['id'] == id);
+              setState(() { _selectedNameId = id; _nameCtrl.text = row['fieldname'].toString(); });
+            },
+            validator: (_) => _nameCtrl.text.trim().isEmpty ? 'Select a ground name' : null,
+          ),
+        ],
+      ),
+    );
+  }
   bool _isLoading = false;
   List<XFile> _pickedImages = [];
   double _uploadProgress = 0;
   String _uploadStatus = '';
-
   // ── Location state ──────────────────────────────────
   double? _lat;
   double? _lng;
   bool _locationLoading = false;
-
   final List<String> _sportTypes = [
     'Cricket',
     'Football',
@@ -45,7 +245,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
     'Tennis',
     'Hockey',
   ];
-
   final List<_AmenityOption> _amenities = [
     _AmenityOption(label: 'Parking', icon: Icons.local_parking_rounded),
     _AmenityOption(label: 'Drinking Water', icon: Icons.water_drop_outlined),
@@ -55,7 +254,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
     _AmenityOption(label: 'First Aid', icon: Icons.medical_services_outlined),
     _AmenityOption(label: 'Free Wi-Fi', icon: Icons.wifi_rounded),
   ];
-
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -64,14 +262,11 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
     _cityCtrl.dispose();
     super.dispose();
   }
-
   List<String> get _selectedAmenities =>
       _amenities.where((a) => a.selected).map((a) => a.label).toList();
-
   // ── Capture current location ────────────────────────
   Future<void> _captureLocation() async {
     setState(() => _locationLoading = true);
-
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -88,11 +283,9 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
         );
         return;
       }
-
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
       setState(() {
         _lat = pos.latitude;
         _lng = pos.longitude;
@@ -103,7 +296,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       if (mounted) setState(() => _locationLoading = false);
     }
   }
-
   // ── Pick images ─────────────────────────────────────
   Future<void> _pickImages() async {
     final remaining = 4 - _pickedImages.length;
@@ -122,30 +314,55 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       _pickedImages = [..._pickedImages, ...picked].take(4).toList();
     });
   }
-
   void _removeImage(int index) => setState(() => _pickedImages.removeAt(index));
-
   // ── Save ground through REST API ─────────────────────────────────────────
   Future<void> _saveGround() async {
+    if (_isLoading || _loadingGround || _namesLoading) return;
+    if (_groundLoadError != null) {
+      _showSnack('Load the existing ground before updating.', Colors.red[700]!);
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedSports.isEmpty) {
+      _showSnack('Select at least one game.', Colors.orange[700]!);
+      return;
+    }
     setState(() { _isLoading = true; _uploadProgress = 0; _uploadStatus = 'Saving ground details...'; });
     try {
       final user = SessionManager.currentUser ?? const <String,dynamic>{};
       final data = <String,dynamic>{
         'name': _nameCtrl.text.trim(), 'address': _addressCtrl.text.trim(), 'city': _cityCtrl.text.trim(),
-        'sportType': _sportType, 'description': _descCtrl.text.trim(), 'rules': _descCtrl.text.trim(),
+        'sportType': _selectedSports.join(','), 'description': _descCtrl.text.trim(), 'rules': _descCtrl.text.trim(),
         'amenities': _selectedAmenities, 'adminId': SessionManager.currentUserId,
         'adminName': (user['name'] ?? 'Ground Owner').toString(), 'status': true,
-        'location': _lat != null && _lng != null ? {'lat': _lat, 'lng': _lng} : null,
-        'latitude': _lat ?? 0, 'longitude': _lng ?? 0, 'pricing': <String,dynamic>{},
+        'location': _addressCtrl.text.trim(),
+        'latitude': _lat ?? 0, 'longitude': _lng ?? 0, 'pricing': _existingPricing,
       };
       setState(() => _uploadStatus = _pickedImages.isEmpty ? 'Creating ground...' : 'Uploading images & creating ground...');
-      await GroundApi().create(data: data, images: _pickedImages.map((x)=>File(x.path)).toList());
+      final images = _pickedImages.map((x) => File(x.path)).toList();
+      if (_isEditing) {
+        final updateData = Map<String, dynamic>.from(data)
+          ..remove('status')
+          ..remove('adminId')
+          ..remove('adminName');
+        await GroundApi().update(widget.groundId!, updateData);
+        if (images.isNotEmpty) {
+          try {
+            await GroundApi().uploadImages(widget.groundId!, images);
+            if (mounted) setState(() => _pickedImages.clear());
+          } catch (error) {
+            if (mounted) _showSnack(
+              'Ground details saved, but image upload failed: $error', Colors.orange[700]!);
+            return;
+          }
+        }
+      } else {
+        await GroundApi().create(data: data, images: images);
+      }
       if (!mounted) return; _showSuccessDialog();
     } catch (e) { if (mounted) _showSnack('Failed to save ground: $e', Colors.red[700]!); }
     finally { if (mounted) setState(() { _isLoading=false; _uploadProgress=0; _uploadStatus=''; }); }
   }
-
   void _showSnack(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -156,7 +373,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       ),
     );
   }
-
   void _showSuccessDialog() {
     showDialog(
       context: context,
@@ -182,8 +398,8 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
-                'Ground Added!',
+              Text(
+                _isEditing ? 'Ground Updated!' : 'Ground Added!',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -229,7 +445,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -250,8 +465,8 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                     ),
                     onPressed: () => context.pop(),
                   ),
-                  const Text(
-                    'Add New\nGround',
+                  Text(
+                    _isEditing ? 'Edit Ground' : 'Add New\nGround',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -281,7 +496,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                 ],
               ),
             ),
-
             // ── Upload progress ──────────────────────
             if (_isLoading && _uploadProgress > 0)
               Padding(
@@ -309,7 +523,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                   ],
                 ),
               ),
-
             // ── Form ─────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
@@ -318,12 +531,32 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (_loadingGround) const LinearProgressIndicator(),
+                      if (_groundLoadError != null) Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(children: [
+                          Text('Could not load ground: $_groundLoadError'),
+                          TextButton(onPressed: _initializeGround, child: const Text('Retry')),
+                        ]),
+                      ),
+                      _buildGroundNameSelector(),
+                      if (_existingImages.isNotEmpty) Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Wrap(spacing: 8, runSpacing: 8, children:
+                          _existingImages.map((url) => ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(url, width: 80, height: 80, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const SizedBox(
+                                width: 80, height: 80, child: Icon(Icons.broken_image_outlined)),
+                            ),
+                          )).toList(),
+                        ),
+                      ),
                       _sectionLabel(
                         'GROUND GALLERY',
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                       ),
                       _buildGallery(),
-
                       // ── Location ──────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -372,7 +605,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-
                       // ── Map Card ──────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -451,7 +683,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-
                       // Address fields
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -475,39 +706,24 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 16),
                       const Divider(height: 1, color: AppColors.divider),
                       const SizedBox(height: 16),
-
                       // Ground Name + Sport
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _fieldLabel('Ground Name'),
+                            _fieldLabel('Game Type (select multiple)'),
                             const SizedBox(height: 8),
-                            _buildField(
-                              controller: _nameCtrl,
-                              hint: 'DDA Cricket Ground',
-                              validator: (v) =>
-                                  (v == null || v.trim().length < 3)
-                                  ? 'Enter ground name'
-                                  : null,
-                            ),
-                            const SizedBox(height: 14),
-                            _fieldLabel('Sport Type'),
-                            const SizedBox(height: 8),
-                            _buildDropdown(),
+                            _buildGameSelector(),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 20),
                       const Divider(height: 1, color: AppColors.divider),
                       const SizedBox(height: 16),
-
                       // Amenities
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -602,11 +818,9 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 16),
                       const Divider(height: 1, color: AppColors.divider),
                       const SizedBox(height: 16),
-
                       // Description
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -652,9 +866,7 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 24),
-
                       // Save button
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -662,7 +874,8 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton.icon(
-                            onPressed: _isLoading ? null : _saveGround,
+                            onPressed: _isLoading || _loadingGround || _namesLoading || _groundLoadError != null
+                                ? null : _saveGround,
                             icon: _isLoading
                                 ? const SizedBox(
                                     width: 20,
@@ -698,7 +911,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-
                       Center(
                         child: TextButton(
                           onPressed: _isLoading ? null : () => context.pop(),
@@ -723,7 +935,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       ),
     );
   }
-
   Widget _buildGallery() {
     return Column(
       children: [
@@ -917,7 +1128,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       ],
     );
   }
-
   Widget _buildField({
     required TextEditingController controller,
     required String hint,
@@ -955,37 +1165,30 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       ),
     );
   }
-
-  Widget _buildDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border, width: 1),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _sportType,
-          isExpanded: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AppColors.textSecondary,
-          ),
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w500,
-          ),
-          items: _sportTypes
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (v) => setState(() => _sportType = v!),
+  Widget _buildGameSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _sportTypes.map((sport) => FilterChip(
+            label: Text(sport),
+            selected: _selectedSports.contains(sport),
+            selectedColor: AppColors.primary.withValues(alpha: 0.15),
+            onSelected: _isLoading || _loadingGround ? null : (selected) {
+              setState(() {
+                if (selected) { _selectedSports.add(sport); }
+                else { _selectedSports.remove(sport); }
+              });
+            },
+          )).toList(),
         ),
-      ),
+        const SizedBox(height: 8),
+        Text('${_selectedSports.length} game(s) selected'),
+      ],
     );
   }
-
   Widget _sectionLabel(String text, {EdgeInsets? padding}) {
     return Padding(
       padding: padding ?? EdgeInsets.zero,
@@ -1000,7 +1203,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
       ),
     );
   }
-
   Widget _fieldLabel(String text) {
     return Text(
       text,
@@ -1012,7 +1214,6 @@ class _AddGroundScreenState extends State<AddGroundScreen> {
     );
   }
 }
-
 class _AmenityOption {
   final String label;
   final IconData icon;

@@ -4,6 +4,24 @@ const env = require("../config/env");
 const { ApiError, asyncHandler, ok } = require("../utils/http");
 const S = require("../utils/serializers");
 
+
+// Keep the existing sportType string contract, allowing comma-separated games.
+function normalizeSportType(value) {
+  const raw = Array.isArray(value) ? value :
+    typeof value === 'string' ? value.split(',') : [];
+  const games = [...new Set(raw.map((game) => {
+    if (typeof game !== 'string') throw new ApiError(422, 'Invalid game type');
+    return game.trim();
+  }).filter(Boolean))];
+  if (!games.length) throw new ApiError(422, 'Select at least one game');
+  if (games.some((game) => game.includes(',')))
+    throw new ApiError(422, 'Game names cannot contain commas');
+  const result = games.join(',');
+  if (result.length > 80)
+    throw new ApiError(422, 'Selected game names exceed 80 characters');
+  return result;
+}
+
 async function imagesFor(ids) {
   if (!ids.length) return new Map();
   const [rows] = await pool.query(
@@ -49,7 +67,7 @@ const listPublic = asyncHandler(async (req, res) => {
     vals.push(city);
   }
   if (sportType) {
-    sql += " AND sport_type=?";
+    sql += " AND FIND_IN_SET(?, sport_type)>0";
     vals.push(sportType);
   }
   sql += " ORDER BY created_at DESC";
@@ -76,21 +94,22 @@ const create = asyncHandler(async (req, res) => {
     typeof b.amenities === "string"
       ? JSON.parse(b.amenities)
       : b.amenities || [];
-  const name = typeof b.name === "string" ? b.name.trim() : "";
-  if (!name) throw new ApiError(422, "Ground name is required");
+  const name = typeof b.name === 'string' ? b.name.trim() : '';
+  if (!name) throw new ApiError(422, 'Ground name is required');
+  const sportType = normalizeSportType(b.sportType);
   const [existing] = await pool.query(
-    "SELECT id FROM grounds WHERE admin_id=? AND LOWER(TRIM(name))=LOWER(?) LIMIT 1",
+    'SELECT id FROM grounds WHERE admin_id=? AND LOWER(TRIM(name))=LOWER(?) LIMIT 1',
     [req.user.id, name],
   );
-  if (existing.length) throw new ApiError(409, "This ground already exists.");
+  if (existing.length) throw new ApiError(409, 'This ground already exists.');
   const [r] = await pool.query(
     `INSERT INTO grounds (admin_id,name,sport_type,city,location,latitude,longitude,amenities,rules,status,price_morning,price_afternoon,price_evening,price_weekend) VALUES (?,?,?,?,?,?,?,?,?,'active',?,?,?,?)`,
     [
       req.user.id,
       name,
-      b.sportType || "",
-      b.city || "",
-      b.location || "",
+      sportType,
+      b.city,
+      b.location,
       Number(b.latitude || 0),
       Number(b.longitude || 0),
       JSON.stringify(amenities),
@@ -130,7 +149,18 @@ const create = asyncHandler(async (req, res) => {
 });
 const update = asyncHandler(async (req, res) => {
   const g = await getOwnedGround(req.params.id, req.user);
-  const b = req.body;
+  const b = { ...req.body };
+  if (b.sportType !== undefined) b.sportType = normalizeSportType(b.sportType);
+  if (b.name !== undefined) {
+    if (typeof b.name !== 'string' || !b.name.trim())
+      throw new ApiError(422, 'Ground name is required');
+    b.name = b.name.trim();
+    const [existing] = await pool.query(
+      'SELECT id FROM grounds WHERE admin_id=? AND id<>? AND LOWER(TRIM(name))=LOWER(?) LIMIT 1',
+      [g.admin_id, g.id, b.name],
+    );
+    if (existing.length) throw new ApiError(409, 'This ground already exists.');
+  }
   const fields = {
     name: "name",
     sportType: "sport_type",

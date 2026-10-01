@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'api_client.dart';
 import 'session_manager.dart';
 
@@ -325,5 +324,27 @@ class ProfileApi {
       '/profile/password',
       body: {'currentPassword': currentPassword, 'newPassword': newPassword},
     );
+  }
+}
+
+class GroundFieldnameApi {
+  final ApiClient _api = ApiClient.instance;
+
+  Future<List<Map<String, dynamic>>> list() async {
+    final result = await _api.get('/ground_fieldname');
+    return (result as List)
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> create(String fieldname) async {
+    return Map<String, dynamic>.from(await _api.post(
+      '/ground_fieldname', body: {'fieldname': fieldname.trim()},
+    ));
+  }
+
+  Future<void> update(String id, String fieldname) async {
+    await _api.patch('/ground_fieldname/$id',
+        body: {'fieldname': fieldname.trim()});
   }
 }

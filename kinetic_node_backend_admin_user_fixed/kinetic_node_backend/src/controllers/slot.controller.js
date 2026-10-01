@@ -30,7 +30,7 @@ function normalizeMySqlTime(value) {
 
 async function assertGroundOwner(groundId, user) {
   const [r] = await pool.query(
-    "SELECT admin_id FROM grounds WHERE id=?",
+    "SELECT admin_id,sport_type FROM grounds WHERE id=?",
     [groundId],
   );
 
@@ -48,6 +48,16 @@ async function assertGroundOwner(groundId, user) {
   return r[0];
 }
 
+
+async function validateSlotSport(slot, user) {
+  const ground = await assertGroundOwner(slot.groundId, user);
+  const sports = String(ground.sport_type || '').split(',').map(s => s.trim()).filter(Boolean);
+  const sport = typeof slot.sportType === 'string' ? slot.sportType.trim() : '';
+  if (!sport || !sports.includes(sport)) {
+    throw new ApiError(422, 'Select a valid sport belonging to this ground');
+  }
+  return sport;
+}
 
 // ======================================================
 // GET SPECIFIC GROUND + DATE SLOTS
@@ -128,10 +138,7 @@ const mine = asyncHandler(async (req, res) => {
 const create = asyncHandler(async (req, res) => {
   const b = req.body;
 
-  await assertGroundOwner(
-    b.groundId,
-    req.user,
-  );
+  const sportType = await validateSlotSport(b, req.user);
 
   const [r] = await pool.query(
     `
@@ -142,9 +149,10 @@ const create = asyncHandler(async (req, res) => {
       start_time,
       end_time,
       price,
-      status
+      status,
+      sport_type
     )
-    VALUES (?,?,?,?,?,?)
+    VALUES (?,?,?,?,?,?,?)
     `,
     [
       b.groundId,
@@ -153,6 +161,7 @@ const create = asyncHandler(async (req, res) => {
       normalizeMySqlTime(b.endTime),
       b.price || 0,
       b.status || "available",
+      sportType,
     ],
   );
 
@@ -192,17 +201,18 @@ const bulkCreate = asyncHandler(async (req, res) => {
     );
   }
 
-  await assertGroundOwner(
-    slots[0].groundId,
-    req.user,
-  );
+  // Validate every ground before writing any slot.
+  const validatedSlots = [];
+  for (const slot of slots) {
+    validatedSlots.push({ ...slot, sportType: await validateSlotSport(slot, req.user) });
+  }
 
   const c = await pool.getConnection();
 
   try {
     await c.beginTransaction();
 
-    for (const s of slots) {
+    for (const s of validatedSlots) {
       await c.query(
         `
         INSERT INTO slots
@@ -212,9 +222,10 @@ const bulkCreate = asyncHandler(async (req, res) => {
           start_time,
           end_time,
           price,
-          status
+          status,
+          sport_type
         )
-        VALUES (?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?)
         `,
         [
           s.groundId,
@@ -223,6 +234,7 @@ const bulkCreate = asyncHandler(async (req, res) => {
           normalizeMySqlTime(s.endTime),
           s.price || 0,
           s.status || "available",
+          s.sportType,
         ],
       );
     }

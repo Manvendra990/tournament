@@ -4,71 +4,56 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:slotbookingadmin/Admin/navbar/adminNavbar.dart';
 import 'package:slotbookingadmin/theme/app_colors.dart';
-
-// ✅ Import kar lo apni service file
-
+// Display the saved sport of this slot, never the ground's full game list.
+String _slotGameType(Map<String, dynamic> data) {
+  final value = (data['sportType'] ?? data['sport_type'] ?? '').toString().trim();
+  return value.isEmpty ? 'Game not specified' : value;
+}
 class AdminBookingsScreen extends StatefulWidget {
   const AdminBookingsScreen({super.key});
-
   @override
   State<AdminBookingsScreen> createState() => _AdminBookingsScreenState();
 }
-
 class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
   bool _showUpcoming = true;
   String _filterStatus = 'all';
-
   final SlotApi _slotApi = SlotApi();
   late Future<List<Map<String, dynamic>>> _slotsFuture;
-
   @override
   void initState() {
     super.initState();
     _reloadSlots();
   }
-
   void _reloadSlots() {
     _slotsFuture = _slotApi.mine();
   }
-
   DateTime? _parseSlotDate(Map<String, dynamic> data) {
     final raw = data['date']?.toString();
     if (raw == null || raw.isEmpty) return null;
     return DateTime.tryParse(raw);
   }
-
   DateTime? _parseSlotTime(Map<String, dynamic> data, String key) {
     final slotDate = _parseSlotDate(data);
     final raw = data[key]?.toString();
-
     if (slotDate == null || raw == null || raw.isEmpty) return null;
-
     final parts = raw.split(':');
     if (parts.length < 2) return null;
-
     final hour = int.tryParse(parts[0]);
     final minute = int.tryParse(parts[1]);
     if (hour == null || minute == null) return null;
-
     return DateTime(slotDate.year, slotDate.month, slotDate.day, hour, minute);
   }
-
   bool _isPastSlot(Map<String, dynamic> data) {
     final now = DateTime.now();
     final slotDate = _parseSlotDate(data);
     final endTime = _parseSlotTime(data, 'endTime');
-
     if (slotDate == null) return false;
-
     final today = DateTime(now.year, now.month, now.day);
     final dateOnly = DateTime(slotDate.year, slotDate.month, slotDate.day);
-
     if (dateOnly.isBefore(today)) return true;
     if (dateOnly.isAfter(today)) return false;
-
     return endTime != null && now.isAfter(endTime);
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,7 +89,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   // ── Toggle tabs ───────────────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(4),
@@ -136,7 +120,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                 ],
               ),
             ),
-
             // ── Body ─────────────────────────────────────────────────────────
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -149,7 +132,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                       ),
                     );
                   }
-
                   if (snapshot.hasError) {
                     return Center(
                       child: Padding(
@@ -175,27 +157,21 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                       ),
                     );
                   }
-
                   final allSlots = List<Map<String, dynamic>>.from(
                     snapshot.data ?? [],
                   );
-
                   final slots = allSlots.where((slot) {
                     final isPast = _isPastSlot(slot);
                     return _showUpcoming ? !isPast : isPast;
                   }).toList();
-
                   slots.sort((a, b) {
                     final aStart = _parseSlotTime(a, 'startTime');
                     final bStart = _parseSlotTime(b, 'startTime');
-
                     if (aStart == null || bStart == null) return 0;
-
                     return _showUpcoming
                         ? aStart.compareTo(bStart)
                         : bStart.compareTo(aStart);
                   });
-
                   final filteredSlots = _filterStatus == 'all'
                       ? slots
                       : slots.where((slot) {
@@ -204,9 +180,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                                   .toLowerCase() ==
                               _filterStatus;
                         }).toList();
-
                   final activeCount = filteredSlots.length;
-
                   return RefreshIndicator(
                     color: AppColors.primary,
                     onRefresh: () async {
@@ -221,7 +195,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                         children: [
                           _SummaryCard(activeCount: activeCount),
                           const SizedBox(height: 24),
-
                           if (filteredSlots.isEmpty)
                             _EmptyState(isUpcoming: _showUpcoming)
                           else
@@ -248,14 +221,12 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                 },
               ),
             ),
-
             const AdminNavBar(currentIndex: 3),
           ],
         ),
       ),
     );
   }
-
   // ── Edit slot dialog ───────────────────────────────────────────────────────
   void _showEditDialog(
     BuildContext context,
@@ -266,7 +237,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     final priceCtrl = TextEditingController(
       text: (data['price'] ?? 0).toString(),
     );
-
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -323,12 +293,9 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                   );
                   return;
                 }
-
                 Navigator.pop(ctx);
-
                 try {
                   await _slotApi.update(slotId, status: status, price: price);
-
                   if (!mounted) return;
                   setState(_reloadSlots);
                   _showSnack('Slot updated successfully.', AppColors.primary);
@@ -352,7 +319,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
       ),
     ).whenComplete(priceCtrl.dispose);
   }
-
   // ── Details bottom sheet ───────────────────────────────────────────────────
   void _showDetailsSheet(
     BuildContext context,
@@ -365,7 +331,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     final price = data['price'] ?? 0;
     final status = (data['status'] ?? 'available').toString();
     final groundId = data['groundId']?.toString() ?? '';
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -398,6 +363,11 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
               icon: Icons.tag_rounded,
               label: 'Slot ID',
               value: '#${slotId.toUpperCase()}',
+            ),
+            _DetailRow(
+              icon: Icons.sports_rounded,
+              label: 'Game Type',
+              value: _slotGameType(data),
             ),
             if (groundId.isNotEmpty)
               _DetailRow(
@@ -454,7 +424,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
       ),
     );
   }
-
   // ── Delete slot ────────────────────────────────────────────────────────────
   void _deleteSlot(
     BuildContext context,
@@ -481,10 +450,8 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-
               try {
                 await _slotApi.delete(slotId);
-
                 if (!mounted) return;
                 setState(_reloadSlots);
                 _showSnack('Slot deleted successfully.', Colors.red[700]!);
@@ -507,7 +474,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
       ),
     );
   }
-
   void _showSnack(String msg, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -520,15 +486,12 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     );
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Baaki widgets same hain — koi change nahi
 // ─────────────────────────────────────────────────────────────────────────────
-
 class _SummaryCard extends StatelessWidget {
   final int activeCount;
   const _SummaryCard({required this.activeCount});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -598,12 +561,10 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
-
 class _BookingCard extends StatelessWidget {
   final String bookingId;
   final Map<String, dynamic> data;
   final VoidCallback onEdit, onDetails, onDelete;
-
   const _BookingCard({
     required this.bookingId,
     required this.data,
@@ -611,7 +572,6 @@ class _BookingCard extends StatelessWidget {
     required this.onDetails,
     required this.onDelete,
   });
-
   @override
   Widget build(BuildContext context) {
     final dateRaw = data['date']?.toString() ?? '';
@@ -620,9 +580,7 @@ class _BookingCard extends StatelessWidget {
     final status = (data['status'] ?? 'available').toString();
     final amount = data['price'] ?? 0;
     final groundId = data['groundId']?.toString() ?? '';
-
     final slotDate = DateTime.tryParse(dateRaw);
-
     DateTime? buildTime(String raw) {
       if (slotDate == null || raw.isEmpty) return null;
       final p = raw.split(':');
@@ -630,7 +588,6 @@ class _BookingCard extends StatelessWidget {
       final hour = int.tryParse(p[0]);
       final minute = int.tryParse(p[1]);
       if (hour == null || minute == null) return null;
-
       return DateTime(
         slotDate.year,
         slotDate.month,
@@ -639,25 +596,19 @@ class _BookingCard extends StatelessWidget {
         minute,
       );
     }
-
     final startTime = buildTime(startRaw);
     final endTime = buildTime(endRaw);
-
     final timeStr = (startTime != null && endTime != null)
         ? '${DateFormat('hh:mm a').format(startTime)} - ${DateFormat('hh:mm a').format(endTime)}'
         : '--:-- - --:--';
-
     final dateStr = slotDate != null
         ? DateFormat('dd MMM yyyy').format(slotDate)
         : '--';
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-
     final isSlotDatePast =
         slotDate != null &&
         DateTime(slotDate.year, slotDate.month, slotDate.day).isBefore(today);
-
     final isSlotDateToday =
         slotDate != null &&
         DateTime(
@@ -665,25 +616,20 @@ class _BookingCard extends StatelessWidget {
           slotDate.month,
           slotDate.day,
         ).isAtSameMomentAs(today);
-
     final isLive =
         isSlotDateToday &&
         startTime != null &&
         endTime != null &&
         now.isAfter(startTime) &&
         now.isBefore(endTime);
-
     final isTimeExpiredToday =
         isSlotDateToday && endTime != null && now.isAfter(endTime);
-
     final isSlotPast = isSlotDatePast || isTimeExpiredToday;
-
     final displayStatus = isLive
         ? 'live'
         : isSlotPast && status == 'available'
         ? 'expired'
         : status;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -717,7 +663,31 @@ class _BookingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.sports_rounded, size: 17, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Game: ${_slotGameType(data)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             FutureBuilder<ApiDocument?>(
               future: groundId.isNotEmpty
                   ? AdminApiCompat.ground(groundId)
@@ -806,7 +776,6 @@ class _BookingCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 14),
-
             // ── Action buttons ─────────────────────────────────────────────
             Row(
               children: [
@@ -875,11 +844,9 @@ class _BookingCard extends StatelessWidget {
     );
   }
 }
-
 class _StatusBadge extends StatelessWidget {
   final String status;
   const _StatusBadge({required this.status});
-
   @override
   Widget build(BuildContext context) {
     Color bg, textColor;
@@ -908,7 +875,6 @@ class _StatusBadge extends StatelessWidget {
         bg = const Color(0xFFF0F4FF);
         textColor = const Color(0xFF4A5DA0);
     }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -927,7 +893,6 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
-
 class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label, value;
@@ -936,7 +901,6 @@ class _DetailRow extends StatelessWidget {
     required this.label,
     required this.value,
   });
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -960,7 +924,6 @@ class _DetailRow extends StatelessWidget {
     );
   }
 }
-
 class _TabChip extends StatelessWidget {
   final String label;
   final bool isActive;
@@ -970,7 +933,6 @@ class _TabChip extends StatelessWidget {
     required this.isActive,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -1006,12 +968,10 @@ class _TabChip extends StatelessWidget {
     );
   }
 }
-
 class _FilterRow extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
   const _FilterRow({required this.selected, required this.onChanged});
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -1065,7 +1025,6 @@ class _FilterRow extends StatelessWidget {
     );
   }
 }
-
 class _FilterChip extends StatelessWidget {
   final String label, value, selected;
   final ValueChanged<String> onTap;
@@ -1075,7 +1034,6 @@ class _FilterChip extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     final isActive = selected == value;
@@ -1104,11 +1062,9 @@ class _FilterChip extends StatelessWidget {
     );
   }
 }
-
 class _EmptyState extends StatelessWidget {
   final bool isUpcoming;
   const _EmptyState({required this.isUpcoming});
-
   @override
   Widget build(BuildContext context) {
     return Center(
