@@ -2,7 +2,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const app = require("./app");
 const env = require("./config/env");
-const { pingDb, ensureRuntimeSchema } = require("./config/db");
+const { pool, pingDb, ensureRuntimeSchema } = require("./config/db");
 const { configureSockets } = require("./sockets");
 
 async function start() {
@@ -15,6 +15,31 @@ async function start() {
   });
   configureSockets(io);
   app.set("io", io);
+
+  let shuttingDown = false;
+  function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`Received ${signal}; closing API server...`);
+
+    io.close(async () => {
+      try {
+        await pool.end();
+      } catch (error) {
+        console.error("Failed to close database pool:", error);
+      }
+
+      if (signal === "SIGUSR2") {
+        process.kill(process.pid, signal);
+      } else {
+        process.exit(signal === "SIGINT" ? 130 : 0);
+      }
+    });
+  }
+
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP", "SIGUSR2"]) {
+    process.once(signal, () => shutdown(signal));
+  }
 
   server.listen(env.port, () => {
     console.log(`API running at ${env.apiBaseUrl}`);

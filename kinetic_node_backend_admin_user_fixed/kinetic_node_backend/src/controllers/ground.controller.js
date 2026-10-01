@@ -76,16 +76,21 @@ const create = asyncHandler(async (req, res) => {
     typeof b.amenities === "string"
       ? JSON.parse(b.amenities)
       : b.amenities || [];
-  if (!b.name || !b.sportType || !b.city || !b.location)
-    throw new ApiError(422, "name, sportType, city and location are required");
+  const name = typeof b.name === "string" ? b.name.trim() : "";
+  if (!name) throw new ApiError(422, "Ground name is required");
+  const [existing] = await pool.query(
+    "SELECT id FROM grounds WHERE admin_id=? AND LOWER(TRIM(name))=LOWER(?) LIMIT 1",
+    [req.user.id, name],
+  );
+  if (existing.length) throw new ApiError(409, "This ground already exists.");
   const [r] = await pool.query(
     `INSERT INTO grounds (admin_id,name,sport_type,city,location,latitude,longitude,amenities,rules,status,price_morning,price_afternoon,price_evening,price_weekend) VALUES (?,?,?,?,?,?,?,?,?,'active',?,?,?,?)`,
     [
       req.user.id,
-      b.name,
-      b.sportType,
-      b.city,
-      b.location,
+      name,
+      b.sportType || "",
+      b.city || "",
+      b.location || "",
       Number(b.latitude || 0),
       Number(b.longitude || 0),
       JSON.stringify(amenities),

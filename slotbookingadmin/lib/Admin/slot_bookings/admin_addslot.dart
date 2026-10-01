@@ -20,7 +20,6 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
 
   // Form state
   String? _selectedGroundId;
-  String? _selectedGroundName;
   DateTime _slotDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 6, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 7, minute: 0);
@@ -51,25 +50,241 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     setState(() => _isLoading = true);
     try {
       final rows = await _groundApi.mine();
+      if (!mounted) return;
+      final grounds = _normalizeGrounds(rows);
+      final previousSelection = _selectedGroundId;
       setState(() {
-        _grounds = rows
-            .map(
-              (d) => {
-                'id': (d['id'] ?? d['_id'] ?? '').toString(),
-                'name': (d['name'] ?? 'Ground').toString(),
-              },
-            )
-            .toList();
-        if (_grounds.isNotEmpty) {
-          _selectedGroundId = _grounds[0]['id'];
-          _selectedGroundName = _grounds[0]['name'];
-        }
+        _grounds = grounds;
+        _selectedGroundId = grounds.any((g) => g['id'] == previousSelection)
+            ? previousSelection
+            : grounds.isEmpty
+            ? null
+            : grounds.first['id'] as String;
       });
     } catch (e) {
-      _showSnack('Failed to load grounds: $e', Colors.red[700]!);
+      if (mounted) _showSnack('Failed to load grounds: $e', Colors.red[700]!);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  List<Map<String, dynamic>> _normalizeGrounds(
+    List<Map<String, dynamic>> rows,
+  ) => rows
+      .map(
+        (ground) => {
+          'id': (ground['id'] ?? ground['_id'] ?? '').toString(),
+          'name': (ground['name'] ?? 'Ground').toString(),
+        },
+      )
+      .where((ground) => (ground['id'] as String).isNotEmpty)
+      .toList();
+
+  String? get _selectedGroundName {
+    for (final ground in _grounds) {
+      if (ground['id'] == _selectedGroundId) return ground['name'] as String;
+    }
+    return null;
+  }
+
+  void _selectGround(String id) {
+    if (!_grounds.any((ground) => ground['id'] == id)) return;
+    setState(() => _selectedGroundId = id);
+  }
+
+  Future<void> _showAddGroundDialog() async {
+    var enteredName = '';
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        var isAdding = false;
+        String? errorMessage;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Add New Ground',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0E1A13),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _fieldLabel('Ground Name'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.words,
+                    enabled: !isAdding,
+                    decoration: InputDecoration(
+                      hintText: 'Enter ground name',
+                      errorText: errorMessage,
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFB),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      enteredName = value;
+                      if (errorMessage != null) {
+                        setDialogState(() => errorMessage = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: isAdding
+                            ? null
+                            : () => Navigator.of(dialogContext).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: isAdding
+                            ? null
+                            : () async {
+                                final name = enteredName.trim();
+                                if (name.isEmpty) {
+                                  setDialogState(
+                                    () => errorMessage =
+                                        'Please enter a ground name.',
+                                  );
+                                  return;
+                                }
+
+                                final normalizedName = name.toLowerCase();
+                                Map<String, dynamic>? existingGround;
+                                for (final ground in _grounds) {
+                                  if ((ground['name'] as String)
+                                          .trim()
+                                          .toLowerCase() ==
+                                      normalizedName) {
+                                    existingGround = ground;
+                                    break;
+                                  }
+                                }
+                                if (existingGround != null) {
+                                  _selectGround(existingGround['id'] as String);
+                                  Navigator.of(dialogContext).pop();
+                                  _showSnack(
+                                    'This ground already exists.',
+                                    Colors.orange[800]!,
+                                  );
+                                  return;
+                                }
+
+                                setDialogState(() {
+                                  isAdding = true;
+                                  errorMessage = null;
+                                });
+                                try {
+                                  final created = await _groundApi.create(
+                                    data: {'name': name},
+                                  );
+                                  final savedGround = {
+                                    'id':
+                                        (created['id'] ?? created['_id'] ?? '')
+                                            .toString(),
+                                    'name': (created['name'] ?? name)
+                                        .toString(),
+                                  };
+                                  if ((savedGround['id'] as String).isEmpty) {
+                                    throw Exception(
+                                      'The API did not return the new ground ID.',
+                                    );
+                                  }
+
+                                  var refreshedGrounds =
+                                      List<Map<String, dynamic>>.from(_grounds);
+                                  String? refreshError;
+                                  try {
+                                    refreshedGrounds = _normalizeGrounds(
+                                      await _groundApi.mine(),
+                                    );
+                                  } catch (error) {
+                                    refreshError = error.toString();
+                                  }
+                                  if (!refreshedGrounds.any(
+                                    (ground) =>
+                                        ground['id'] == savedGround['id'],
+                                  )) {
+                                    refreshedGrounds.insert(0, savedGround);
+                                  }
+
+                                  if (!mounted || !dialogContext.mounted) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    _grounds = refreshedGrounds;
+                                    _selectedGroundId =
+                                        savedGround['id'] as String;
+                                  });
+                                  Navigator.of(dialogContext).pop();
+                                  if (refreshError != null) {
+                                    _showSnack(
+                                      'Ground added, but refreshing the list failed: $refreshError',
+                                      Colors.orange[800]!,
+                                    );
+                                  }
+                                } catch (error) {
+                                  if (dialogContext.mounted) {
+                                    setDialogState(() {
+                                      isAdding = false;
+                                      errorMessage = error.toString();
+                                    });
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(isAdding ? 'Adding...' : 'Add Ground'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // ── Pick date ──────────────────────────────────────────────────────────────
@@ -193,7 +408,7 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
       _createdSlots.add(
         _SlotEntry(
           groundId: _selectedGroundId!,
-          groundName: _selectedGroundName!,
+          groundName: _selectedGroundName ?? 'Ground',
           date: _slotDate,
           startTime: _startTime,
           endTime: _endTime,
@@ -431,7 +646,34 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                 const SizedBox(height: 18),
 
                                 // Ground picker
-                                _fieldLabel('Select Ground'),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _fieldLabel('Select Ground'),
+                                    TextButton.icon(
+                                      onPressed: _showAddGroundDialog,
+                                      icon: const Icon(
+                                        Icons.add_rounded,
+                                        size: 17,
+                                      ),
+                                      label: const Text('Add'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.primary,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        textStyle: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 const SizedBox(height: 8),
                                 _grounds.isEmpty
                                     ? Container(
@@ -467,6 +709,8 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
                                       )
                                     : _buildGroundDropdown(),
 
+                                const SizedBox(height: 14),
+                                _buildGroundsSection(),
                                 const SizedBox(height: 14),
 
                                 // Date picker
@@ -727,15 +971,63 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
               )
               .toList(),
           onChanged: (v) {
-            setState(() {
-              _selectedGroundId = v;
-              _selectedGroundName = _grounds.firstWhere(
-                (g) => g['id'] == v,
-              )['name'];
-            });
+            if (v != null) _selectGround(v);
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildGroundsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Grounds',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_grounds.isEmpty)
+          Text(
+            'No grounds available yet.',
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _grounds.map((ground) {
+              final selected = ground['id'] == _selectedGroundId;
+              return ChoiceChip(
+                selected: selected,
+                onSelected: (_) => _selectGround(ground['id'] as String),
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (selected) ...[
+                      const Icon(Icons.check_rounded, size: 16),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(ground['name'] as String),
+                  ],
+                ),
+                selectedColor: AppColors.primary.withValues(alpha: 0.14),
+                backgroundColor: const Color(0xFFF8FAFB),
+                side: BorderSide(
+                  color: selected ? AppColors.primary : Colors.grey[300]!,
+                ),
+                labelStyle: TextStyle(
+                  color: selected ? AppColors.primary : AppColors.textPrimary,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+                showCheckmark: false,
+              );
+            }).toList(),
+          ),
+      ],
     );
   }
 
@@ -829,7 +1121,9 @@ class _AddSlotScreenState extends State<AddSlotScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.primary.withValues(alpha: 0.2) : Colors.red[50],
+        color: isValid
+            ? AppColors.primary.withValues(alpha: 0.2)
+            : Colors.red[50],
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
